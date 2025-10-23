@@ -378,26 +378,27 @@ function App() {
   const totalCurrentValueUSD = totalCurrentValue / usdRate;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 dark:from-gray-900 dark:via-gray-800 dark:to-slate-900">
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden">
-          <div className="bg-gradient-to-r from-slate-800 to-slate-700 px-4 md:px-8 py-4 md:py-6">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden border border-slate-200/50 dark:border-gray-700/50">
+          <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 px-4 md:px-8 py-4 md:py-6 relative overflow-hidden">
+            <div className="absolute inset-0 bg-grid-white/[0.05] bg-[size:20px_20px]"></div>
+            <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className="p-3 bg-white bg-opacity-10 rounded-xl backdrop-blur-sm">
+                <div className="p-3 bg-white bg-opacity-20 rounded-xl backdrop-blur-md shadow-lg">
                   <TrendingUp className="text-white" size={28} />
                 </div>
                 <div>
-                  <h1 className="text-2xl md:text-3xl font-bold text-white">Portföy Takip</h1>
-                  <p className="text-slate-300 text-xs md:text-sm mt-1">Canlı fiyat güncellemeleri</p>
+                  <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">Portföy Takip</h1>
+                  <p className="text-blue-100 text-xs md:text-sm mt-1 font-medium">Canlı fiyat güncellemeleri</p>
                 </div>
               </div>
-              <div className="flex flex-wrap gap-2 w-full md:w-auto">
-                <div className="flex items-center gap-2 px-3 py-2 bg-white bg-opacity-10 rounded-lg backdrop-blur-sm">
+              <div className="flex flex-wrap gap-2 w-full md:w-auto relative z-10">
+                <div className="flex items-center gap-2 px-3 py-2 bg-white bg-opacity-15 rounded-lg backdrop-blur-md shadow-md border border-white/20">
                   {connectionStatus === 'connected' ? (
                     <>
                       <Activity className="text-green-400 animate-pulse" size={18} />
-                      <span className="text-white text-sm font-medium">Canlı</span>
+                      <span className="text-white text-sm font-semibold">Canlı</span>
                     </>
                   ) : connectionStatus === 'connecting' ? (
                     <>
@@ -418,26 +419,26 @@ function App() {
                 </div>
                 <button
                   onClick={toggleDarkMode}
-                  className="flex items-center gap-2 px-3 py-2 bg-white bg-opacity-10 hover:bg-opacity-20 text-white rounded-lg transition-all backdrop-blur-sm"
+                  className="flex items-center gap-2 px-3 py-2 bg-white bg-opacity-15 hover:bg-opacity-25 text-white rounded-lg transition-all backdrop-blur-md shadow-md border border-white/20 hover:scale-105"
                 >
                   {isDark ? <Sun size={18} /> : <Moon size={18} />}
                 </button>
                 <button
                   onClick={() => setShowCharts(!showCharts)}
-                  className="flex items-center gap-2 px-3 py-2 bg-white bg-opacity-10 hover:bg-opacity-20 text-white rounded-lg transition-all backdrop-blur-sm"
+                  className="flex items-center gap-2 px-3 py-2 bg-white bg-opacity-15 hover:bg-opacity-25 text-white rounded-lg transition-all backdrop-blur-md shadow-md border border-white/20 hover:scale-105"
                 >
                   <BarChart3 size={18} />
                 </button>
                 <button
                   onClick={() => setShowAlertModal(true)}
-                  className="flex items-center gap-2 px-3 py-2 bg-white bg-opacity-10 hover:bg-opacity-20 text-white rounded-lg transition-all backdrop-blur-sm"
+                  className="flex items-center gap-2 px-3 py-2 bg-white bg-opacity-15 hover:bg-opacity-25 text-white rounded-lg transition-all backdrop-blur-md shadow-md border border-white/20 hover:scale-105"
                 >
                   <Bell size={18} />
                 </button>
                 {!notificationsEnabled && (
                   <button
                     onClick={enableNotifications}
-                    className="flex items-center gap-2 px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-all font-medium"
+                    className="flex items-center gap-2 px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-all font-medium shadow-lg hover:shadow-xl hover:scale-105"
                     title="Bildirimleri Etkinleştir"
                   >
                     <Bell size={18} />
@@ -445,28 +446,28 @@ function App() {
                 )}
                 <button
                   onClick={() => setShowExportImportModal(true)}
-                  className="flex items-center gap-2 px-3 py-2 bg-white bg-opacity-10 hover:bg-opacity-20 text-white rounded-lg transition-all backdrop-blur-sm"
+                  className="flex items-center gap-2 px-3 py-2 bg-white bg-opacity-15 hover:bg-opacity-25 text-white rounded-lg transition-all backdrop-blur-md shadow-md border border-white/20 hover:scale-105"
                 >
                   <Download size={18} />
                 </button>
                 <button
                   onClick={handleRefresh}
                   disabled={refreshing}
-                  className="flex items-center gap-2 px-3 md:px-4 py-2 bg-white bg-opacity-10 hover:bg-opacity-20 text-white rounded-lg transition-all backdrop-blur-sm disabled:opacity-50"
+                  className="flex items-center gap-2 px-3 md:px-4 py-2 bg-white bg-opacity-15 hover:bg-opacity-25 text-white rounded-lg transition-all backdrop-blur-md shadow-md border border-white/20 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
                 >
                   <RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />
                   <span className="font-medium hidden sm:inline">Yenile</span>
                 </button>
                 <button
                   onClick={() => setShowRebalanceModal(true)}
-                  className="flex items-center gap-2 px-3 md:px-4 py-2 bg-white bg-opacity-10 hover:bg-opacity-20 text-white rounded-lg transition-all backdrop-blur-sm"
+                  className="flex items-center gap-2 px-3 md:px-4 py-2 bg-white bg-opacity-15 hover:bg-opacity-25 text-white rounded-lg transition-all backdrop-blur-md shadow-md border border-white/20 hover:scale-105"
                 >
                   <Target size={18} />
                   <span className="font-medium hidden sm:inline">Rebalance</span>
                 </button>
                 <button
                   onClick={() => setShowAddModal(true)}
-                  className="flex items-center gap-2 px-4 md:px-6 py-2 bg-white text-slate-800 rounded-lg hover:bg-slate-50 transition-colors font-medium shadow-lg"
+                  className="flex items-center gap-2 px-4 md:px-6 py-2 bg-white text-blue-700 rounded-lg hover:bg-blue-50 transition-all font-semibold shadow-lg hover:shadow-xl hover:scale-105"
                 >
                   <Plus size={20} />
                   <span className="hidden sm:inline">Varlık Ekle</span>
@@ -475,23 +476,23 @@ function App() {
             </div>
           </div>
 
-          <div className="p-4 md:p-8 bg-slate-50 dark:bg-gray-900 border-b border-slate-200 dark:border-gray-700 space-y-6">
+          <div className="p-4 md:p-8 bg-gradient-to-b from-slate-50 to-white dark:from-gray-900 dark:to-gray-800 border-b border-slate-200 dark:border-gray-700 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-              <div className="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl shadow-sm border border-slate-200 dark:border-gray-700">
-                <p className="text-sm font-medium text-slate-600 dark:text-gray-400 mb-2">Toplam Yatırım</p>
+              <div className="bg-gradient-to-br from-white to-blue-50 dark:from-gray-800 dark:to-gray-750 p-4 md:p-6 rounded-xl shadow-lg border border-blue-200/50 dark:border-gray-700 hover:shadow-xl transition-all">
+                <p className="text-sm font-semibold text-blue-600 dark:text-blue-400 mb-2">Toplam Yatırım</p>
                 <p className="text-xl md:text-2xl font-bold text-slate-900 dark:text-gray-100">
                   {formatCurrency(totalInvestment)} ₺
                 </p>
-                <p className="text-sm text-slate-500 dark:text-gray-500 mt-1">
+                <p className="text-sm text-blue-600 dark:text-blue-400 mt-1 font-medium">
                   ${formatCurrency(totalInvestmentUSD)}
                 </p>
               </div>
-              <div className="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl shadow-sm border border-slate-200 dark:border-gray-700">
-                <p className="text-sm font-medium text-slate-600 dark:text-gray-400 mb-2">Güncel Değer</p>
+              <div className="bg-gradient-to-br from-white to-green-50 dark:from-gray-800 dark:to-gray-750 p-4 md:p-6 rounded-xl shadow-lg border border-green-200/50 dark:border-gray-700 hover:shadow-xl transition-all">
+                <p className="text-sm font-semibold text-green-600 dark:text-green-400 mb-2">Güncel Değer</p>
                 <p className="text-xl md:text-2xl font-bold text-slate-900 dark:text-gray-100">
                   {formatCurrency(totalCurrentValue)} ₺
                 </p>
-                <p className="text-sm text-slate-500 dark:text-gray-500 mt-1">
+                <p className="text-sm text-green-600 dark:text-green-400 mt-1 font-medium">
                   ${formatCurrency(totalCurrentValueUSD)}
                 </p>
               </div>
@@ -505,7 +506,10 @@ function App() {
 
             {livePnlData && (
               <div>
-                <h3 className="text-lg font-semibold text-slate-700 dark:text-gray-300 mb-3">Periyodik PnL</h3>
+                <h3 className="text-lg font-bold text-slate-800 dark:text-gray-200 mb-3 flex items-center gap-2">
+                  <TrendingUp className="text-blue-600" size={20} />
+                  Periyodik PnL
+                </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <PnLCard data={livePnlData.daily} />
                   <PnLCard data={livePnlData.weekly} />
@@ -517,8 +521,11 @@ function App() {
             {showCharts && holdings.length > 0 && (
               <>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                    <h3 className="text-lg font-semibold text-slate-900 mb-4">Portföy Performansı</h3>
+                  <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-slate-200 dark:border-gray-700 hover:shadow-xl transition-shadow">
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+                      <BarChart3 className="text-blue-600" size={20} />
+                      Portföy Performansı
+                    </h3>
                     <div className="h-80">
                       {historicalData.length > 0 ? (
                         <PortfolioChart data={historicalData} type="area" />
@@ -529,8 +536,11 @@ function App() {
                       )}
                     </div>
                   </div>
-                  <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                    <h3 className="text-lg font-semibold text-slate-900 mb-4">Varlık Dağılımı</h3>
+                  <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-slate-200 dark:border-gray-700 hover:shadow-xl transition-shadow">
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+                      <Target className="text-blue-600" size={20} />
+                      Varlık Dağılımı
+                    </h3>
                     <div className="h-80">
                       <AllocationChart holdings={holdings} />
                     </div>
@@ -577,7 +587,7 @@ function App() {
                 </p>
                 <button
                   onClick={() => setShowAddModal(true)}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-slate-800 dark:bg-gray-700 text-white rounded-lg hover:bg-slate-700 dark:hover:bg-gray-600 transition-colors font-medium"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all font-semibold shadow-lg hover:shadow-xl hover:scale-105"
                 >
                   <Plus size={20} />
                   İlk Varlığı Ekle
