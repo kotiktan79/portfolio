@@ -523,7 +523,7 @@ export function LiveDashboard({
             </div>
             <div className="flex items-center gap-1 sm:gap-2">
               <Activity className="animate-pulse" size={14} />
-              <span>Otomatik Güncelleme: 5 Saniye</span>
+              <span>Otomatik Güncelleme: 3 Saniye</span>
             </div>
           </div>
         </div>

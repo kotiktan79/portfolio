@@ -107,7 +107,7 @@ function App() {
   useEffect(() => {
     const interval = setInterval(() => {
       updatePrices();
-    }, 5000);
+    }, 3000);
 
     return () => clearInterval(interval);
   }, [holdings]);
