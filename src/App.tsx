@@ -48,6 +48,7 @@ function App() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingHolding, setEditingHolding] = useState<Holding | null>(null);
   const [showRebalanceModal, setShowRebalanceModal] = useState(false);
+  const [isPageVisible, setIsPageVisible] = useState(true);
   const [showAlertModal, setShowAlertModal] = useState(false);
   const [showExportImportModal, setShowExportImportModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -105,12 +106,26 @@ function App() {
   }, []);
 
   useEffect(() => {
+    const handleVisibilityChange = () => {
+      setIsPageVisible(!document.hidden);
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isPageVisible) return;
+
     const interval = setInterval(() => {
       updatePrices();
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [holdings]);
+  }, [holdings, isPageVisible]);
 
   useEffect(() => {
     if (holdings.length > 0) {
