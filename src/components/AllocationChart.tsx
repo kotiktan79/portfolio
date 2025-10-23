@@ -64,8 +64,29 @@ export function AllocationChart({ holdings }: AllocationChartProps) {
   };
 
   const renderCustomLabel = (entry: any) => {
-    return `${entry.percentage}%`;
+    return {
+      value: `${entry.percentage}%`,
+      fill: '#ffffff',
+      fontSize: 14,
+      fontWeight: 'bold',
+    };
   };
+
+  if (!holdings || holdings.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p className="text-slate-500 dark:text-gray-400">Henüz varlık yok</p>
+      </div>
+    );
+  }
+
+  if (chartData.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p className="text-slate-500 dark:text-gray-400">Veri hesaplanıyor...</p>
+      </div>
+    );
+  }
 
   return (
     <ResponsiveContainer width="100%" height="100%">
