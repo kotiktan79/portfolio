@@ -276,37 +276,42 @@ export async function fetchFromFinnhub(symbol: string, tickerSymbol: string): Pr
 export async function fetchBISTPrice(symbol: string): Promise<number | null> {
   try {
     const response = await fetch(
-      `https://api.scraperapi.com?api_key=demo&url=https://www.isyatirim.com.tr/tr-tr/analiz/hisse/Sayfalar/default.aspx?hisse=${symbol}`,
-      { cache: 'no-cache' }
-    );
-
-    if (response.ok) {
-      const html = await response.text();
-      const priceMatch = html.match(/Son Fiyat[^0-9]*([0-9.,]+)/);
-      if (priceMatch) {
-        const price = parseFloat(priceMatch[1].replace(',', '.'));
-        console.log(`${symbol} (İş Yatırım): ${price} ₺`);
-        return price;
-      }
-    }
-  } catch (error) {
-  }
-
-  try {
-    const response = await fetch(
-      `https://api.twelvedata.com/price?symbol=${symbol}.IS&apikey=demo`,
+      `https://fcsapi.com/api-v3/stock/latest?symbol=${symbol}.IS&access_key=demo`,
       { cache: 'no-cache' }
     );
 
     if (response.ok) {
       const data = await response.json();
-      if (data.price) {
-        const price = parseFloat(data.price);
-        console.log(`${symbol} (TwelveData): ${price} ₺`);
-        return price;
+      if (data.status && data.response && data.response.length > 0) {
+        const price = parseFloat(data.response[0].c || data.response[0].price);
+        if (price > 0) {
+          console.log(`${symbol} (FCS API): ${price} ₺`);
+          return price;
+        }
       }
     }
   } catch (error) {
+    console.warn(`FCS API failed for ${symbol}`);
+  }
+
+  try {
+    const response = await fetch(
+      `https://api.marketstack.com/v1/eod/latest?access_key=demo&symbols=${symbol}.XIST`,
+      { cache: 'no-cache' }
+    );
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.data && data.data.length > 0) {
+        const price = parseFloat(data.data[0].close);
+        if (price > 0) {
+          console.log(`${symbol} (Marketstack): ${price} ₺`);
+          return price;
+        }
+      }
+    }
+  } catch (error) {
+    console.warn(`Marketstack failed for ${symbol}`);
   }
 
   return await fetchBISTFromYahoo(symbol);
@@ -316,39 +321,92 @@ export async function fetchBISTFromYahoo(symbol: string): Promise<number | null>
   try {
     const yahooSymbol = `${symbol}.IS`;
     const response = await fetch(
-      `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=1d&range=1d`,
+      `https://query2.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=1m&range=1d`,
       {
         cache: 'no-cache',
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'Accept': 'application/json',
         }
       }
     );
 
-    if (!response.ok) throw new Error('Yahoo Finance BIST failed');
+    if (!response.ok) {
+      console.warn(`Yahoo Finance failed for ${symbol}, trying alternative...`);
+      return await fetchBISTFromAlternative(symbol);
+    }
 
     const data = await response.json();
-    const price = data?.chart?.result?.[0]?.meta?.regularMarketPrice;
+    const meta = data?.chart?.result?.[0]?.meta;
+    const price = meta?.regularMarketPrice || meta?.previousClose;
 
-    if (price) {
+    if (price && price > 0) {
       console.log(`${symbol} (Yahoo): ${price} ₺`);
       return parseFloat(price);
     }
 
-    return null;
+    return await fetchBISTFromAlternative(symbol);
   } catch (error) {
-    return null;
+    console.warn(`Yahoo error for ${symbol}:`, error);
+    return await fetchBISTFromAlternative(symbol);
   }
+}
+
+export async function fetchBISTFromAlternative(symbol: string): Promise<number | null> {
+  try {
+    const response = await fetch(
+      `https://api.collectapi.com/economy/hisseSenedi?code=${symbol}`,
+      {
+        cache: 'no-cache',
+        headers: {
+          'authorization': 'apikey demo',
+          'content-type': 'application/json'
+        }
+      }
+    );
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.success && data.result && data.result.price) {
+        const price = parseFloat(data.result.price);
+        console.log(`${symbol} (CollectAPI): ${price} ₺`);
+        return price;
+      }
+    }
+  } catch (error) {
+    console.warn(`CollectAPI failed for ${symbol}`);
+  }
+
+  try {
+    const response = await fetch(
+      `https://api.exchangerate.host/latest?base=TRY&symbols=${symbol}`,
+      { cache: 'no-cache' }
+    );
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.rates && data.rates[symbol]) {
+        const price = 1 / parseFloat(data.rates[symbol]);
+        console.log(`${symbol} (ExchangeRate): ${price} ₺`);
+        return price;
+      }
+    }
+  } catch (error) {
+    console.warn(`ExchangeRate failed for ${symbol}`);
+  }
+
+  console.log(`${symbol}: All APIs failed, will use fallback`);
+  return null;
 }
 
 
 const FALLBACK_PRICES: PriceData = {
-  'AKSEN': 48.14,
+  'AKSEN': 51.20,
   'ALTIN': 5837,
-  'ASELS': 207.6,
-  'BIMAS': 538,
+  'ASELS': 215.40,
+  'BIMAS': 565.00,
   'BTC': 4479604.569,
-  'CCOLA': 51.45,
+  'CCOLA': 55.30,
   'ASML': 3500,
   'LVMH': 3800,
   'SAP': 9800,
@@ -362,28 +420,37 @@ const FALLBACK_PRICES: PriceData = {
   'SIEMENS': 8900,
   'ADYEN': 6200,
   'PROSUS': 1650,
-  'EKGYO': 19.34,
-  'ENKAI': 74.6,
-  'EREGL': 26.84,
+  'EKGYO': 20.15,
+  'ENKAI': 78.20,
+  'EREGL': 28.50,
   'ETH': 157118.928,
   'EURO': 48.8,
+  'GARAN': 152.30,
+  'HALKB': 58.40,
+  'ISCTR': 28.75,
+  'KCHOL': 156.80,
+  'KOZAL': 45.60,
+  'PGSUS': 312.50,
+  'PETKM': 165.70,
   'GPA': 19.4199,
   'IPV': 64.9325,
   'LINK': 710.568,
-  'SAHOL': 77.45,
-  'SISE': 34.1,
+  'SAHOL': 82.10,
+  'SISE': 36.20,
   'SOL': 7481.814,
-  'TCELL': 97.6,
-  'THYAO': 288,
-  'TOASO': 260.5,
-  'TUPRS': 181.7,
+  'TCELL': 102.30,
+  'THYAO': 305.50,
+  'TOASO': 275.80,
+  'TUPRS': 195.40,
+  'VAKBN': 42.50,
+  'YKBNK': 38.90,
   'US900123CJ75': 42496,
   'USD': 41.96,
   'XRP': 97.8449,
 };
 
 const priceCache: { [key: string]: { price: number; timestamp: number; source: string } } = {};
-const CACHE_DURATION = 30000;
+const CACHE_DURATION = 10000;
 
 let connectionStatus: ConnectionStatus = 'disconnected';
 const statusListeners: ((status: ConnectionStatus) => void)[] = [];
