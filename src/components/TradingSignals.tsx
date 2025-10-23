@@ -50,7 +50,7 @@ export function TradingSignals({ holdings }: TradingSignalsProps) {
           .from('price_history')
           .select('price')
           .eq('symbol', holding.symbol)
-          .order('created_at', { ascending: true })
+          .order('recorded_at', { ascending: true })
           .limit(30);
 
         let rsi = 50;

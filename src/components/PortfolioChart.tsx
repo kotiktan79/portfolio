@@ -43,8 +43,8 @@ export function PortfolioChart({ data, type = 'area' }: PortfolioChartProps) {
               Yatırım: <span className="font-bold text-slate-900 dark:text-gray-100">{investmentData.value.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺</span>
             </p>
             <p className="text-sm text-slate-600 dark:text-gray-400">
-              PnL: <span className={`font-bold ${payload[2].value >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                {payload[2].value.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺
+              PnL: <span className={`font-bold ${(valueData.value - investmentData.value) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                {(valueData.value - investmentData.value).toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺
               </span>
             </p>
           </div>
