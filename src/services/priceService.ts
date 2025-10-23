@@ -275,43 +275,27 @@ export async function fetchFromFinnhub(symbol: string, tickerSymbol: string): Pr
 
 export async function fetchBISTPrice(symbol: string): Promise<number | null> {
   try {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const response = await fetch(
-      `https://fcsapi.com/api-v3/stock/latest?symbol=${symbol}.IS&access_key=demo`,
-      { cache: 'no-cache' }
+      `${supabaseUrl}/functions/v1/bist-live-prices?symbols=${symbol}`,
+      {
+        cache: 'no-cache',
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        }
+      }
     );
 
     if (response.ok) {
       const data = await response.json();
-      if (data.status && data.response && data.response.length > 0) {
-        const price = parseFloat(data.response[0].c || data.response[0].price);
-        if (price > 0) {
-          console.log(`${symbol} (FCS API): ${price} ₺`);
-          return price;
-        }
+      if (data.success && data.data && data.data[symbol]) {
+        const price = data.data[symbol].price;
+        console.log(`${symbol} (Edge Function): ${price} ₺`);
+        return price;
       }
     }
   } catch (error) {
-    console.warn(`FCS API failed for ${symbol}`);
-  }
-
-  try {
-    const response = await fetch(
-      `https://api.marketstack.com/v1/eod/latest?access_key=demo&symbols=${symbol}.XIST`,
-      { cache: 'no-cache' }
-    );
-
-    if (response.ok) {
-      const data = await response.json();
-      if (data.data && data.data.length > 0) {
-        const price = parseFloat(data.data[0].close);
-        if (price > 0) {
-          console.log(`${symbol} (Marketstack): ${price} ₺`);
-          return price;
-        }
-      }
-    }
-  } catch (error) {
-    console.warn(`Marketstack failed for ${symbol}`);
+    console.warn(`Edge Function failed for ${symbol}, trying direct fetch...`);
   }
 
   return await fetchBISTFromYahoo(symbol);
@@ -639,8 +623,44 @@ export async function fetchRealTimePrice(symbol: string, assetType: AssetType): 
 export async function fetchMultiplePrices(symbols: { symbol: string; assetType: AssetType }[]): Promise<PriceData> {
   const prices: PriceData = {};
 
+  const bistStocks = symbols.filter(s => s.assetType === 'stock' && !EURONEXT_STOCKS[s.symbol]);
+  const otherAssets = symbols.filter(s => s.assetType !== 'stock' || EURONEXT_STOCKS[s.symbol]);
+
+  if (bistStocks.length > 0) {
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const symbolList = bistStocks.map(s => s.symbol).join(',');
+      const response = await fetch(
+        `${supabaseUrl}/functions/v1/bist-live-prices?symbols=${symbolList}`,
+        {
+          cache: 'no-cache',
+          headers: {
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          }
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data) {
+          Object.entries(data.data).forEach(([symbol, priceData]: [string, any]) => {
+            prices[symbol] = priceData.price;
+            console.log(`${symbol} (Bulk Edge Function): ${priceData.price} ₺`);
+          });
+        }
+      }
+    } catch (error) {
+      console.warn('Bulk BIST fetch failed, falling back to individual requests');
+      await Promise.all(
+        bistStocks.map(async ({ symbol, assetType }) => {
+          prices[symbol] = await fetchRealTimePrice(symbol, assetType);
+        })
+      );
+    }
+  }
+
   await Promise.all(
-    symbols.map(async ({ symbol, assetType }) => {
+    otherAssets.map(async ({ symbol, assetType }) => {
       prices[symbol] = await fetchRealTimePrice(symbol, assetType);
     })
   );
