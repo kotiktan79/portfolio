@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, TrendingUp, RefreshCw, Target, Moon, Sun, Bell, BarChart3, Wifi, WifiOff, Activity, Download, Tv, DollarSign } from 'lucide-react';
+import { Plus, TrendingUp, RefreshCw, Target, Moon, Sun, Bell, BarChart3, Wifi, WifiOff, Activity, Download, Tv, DollarSign, Brain, Database, Shield, Palette } from 'lucide-react';
 import { supabase, Holding, AssetType } from './lib/supabase';
 import { AddHoldingModal } from './components/AddHoldingModal';
 import { EditHoldingModal } from './components/EditHoldingModal';
@@ -19,8 +19,14 @@ import { ExportImportModal } from './components/ExportImportModal';
 import { HoldingsFilter } from './components/HoldingsFilter';
 import { TradingSignals } from './components/TradingSignals';
 import { ToastContainer } from './components/Toast';
+import { AdvancedChart } from './components/AdvancedChart';
+import { BackupRestore } from './components/BackupRestore';
+import { AIPortfolioSuggestions } from './components/AIPortfolioSuggestions';
+import { MultiBenchmark } from './components/MultiBenchmark';
+import { Security2FA } from './components/Security2FA';
 import { useToast } from './hooks/useToast';
 import { useDarkMode } from './hooks/useDarkMode';
+import { useTheme } from './hooks/useTheme';
 import {
   fetchMultiplePrices,
   formatCurrency,
@@ -51,6 +57,11 @@ function App() {
   const [isPageVisible, setIsPageVisible] = useState(true);
   const [showAlertModal, setShowAlertModal] = useState(false);
   const [showExportImportModal, setShowExportImportModal] = useState(false);
+  const [showBackupModal, setShowBackupModal] = useState(false);
+  const [showAIModal, setShowAIModal] = useState(false);
+  const [show2FAModal, setShow2FAModal] = useState(false);
+  const [showAdvancedCharts, setShowAdvancedCharts] = useState(false);
+  const [showBenchmark, setShowBenchmark] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAssetType, setSelectedAssetType] = useState<AssetType | 'all'>('all');
   const [sortBy, setSortBy] = useState<'name' | 'value' | 'pnl' | 'pnl_percent'>('value');
@@ -58,6 +69,7 @@ function App() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const toast = useToast();
   const [showCharts, setShowCharts] = useState(false);
+  const { theme, setTheme } = useTheme();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [pnlData, setPnlData] = useState<{
@@ -477,8 +489,35 @@ function App() {
                 <button
                   onClick={() => setShowExportImportModal(true)}
                   className="flex items-center gap-2 px-3 py-2 bg-white bg-opacity-15 hover:bg-opacity-25 text-white rounded-lg transition-all backdrop-blur-md shadow-md border border-white/20 hover:scale-105"
+                  title="Dışa/İçe Aktar"
                 >
                   <Download size={18} />
+                </button>
+                <button
+                  onClick={() => setShowBackupModal(true)}
+                  className="flex items-center gap-2 px-3 py-2 bg-white bg-opacity-15 hover:bg-opacity-25 text-white rounded-lg transition-all backdrop-blur-md shadow-md border border-white/20 hover:scale-105"
+                  title="Yedekle/Geri Yükle"
+                >
+                  <Database size={18} />
+                </button>
+                <button
+                  onClick={() => setShow2FAModal(true)}
+                  className="flex items-center gap-2 px-3 py-2 bg-white bg-opacity-15 hover:bg-opacity-25 text-white rounded-lg transition-all backdrop-blur-md shadow-md border border-white/20 hover:scale-105"
+                  title="2FA Güvenlik"
+                >
+                  <Shield size={18} />
+                </button>
+                <button
+                  onClick={() => {
+                    const themes: Array<'light' | 'dark' | 'blue' | 'purple' | 'green'> = ['light', 'dark', 'blue', 'purple', 'green'];
+                    const currentIndex = themes.indexOf(theme);
+                    const nextTheme = themes[(currentIndex + 1) % themes.length];
+                    setTheme(nextTheme);
+                  }}
+                  className="flex items-center gap-2 px-3 py-2 bg-white bg-opacity-15 hover:bg-opacity-25 text-white rounded-lg transition-all backdrop-blur-md shadow-md border border-white/20 hover:scale-105"
+                  title="Tema Değiştir"
+                >
+                  <Palette size={18} />
                 </button>
                 <button
                   onClick={handleRefresh}
@@ -563,6 +602,17 @@ function App() {
             {showCharts && holdings.length > 0 && (
               <>
                 <TradingSignals holdings={holdings} />
+
+                <AIPortfolioSuggestions holdings={holdings} totalValue={totalCurrentValue} />
+
+                <MultiBenchmark portfolioValue={totalCurrentValue} initialValue={totalInvestment} />
+
+                {holdings.length > 0 && (
+                  <AdvancedChart
+                    symbol={holdings[0].symbol}
+                    currentPrice={holdings[0].current_price}
+                  />
+                )}
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-slate-200 dark:border-gray-700 hover:shadow-xl transition-shadow">
@@ -791,6 +841,22 @@ function App() {
           onAdd={() => {
             setShowAlertModal(false);
             handleRefresh();
+          }}
+        />
+      )}
+
+      {showBackupModal && (
+        <BackupRestore
+          onClose={() => setShowBackupModal(false)}
+          onComplete={handleRefresh}
+        />
+      )}
+
+      {show2FAModal && (
+        <Security2FA
+          onClose={() => setShow2FAModal(false)}
+          onEnable={() => {
+            toast.addToast('2FA başarıyla etkinleştirildi!', 'success');
           }}
         />
       )}
