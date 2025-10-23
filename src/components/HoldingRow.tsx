@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { Pencil, Trash2, TrendingUp, TrendingDown, Edit3 } from 'lucide-react';
 import { Holding } from '../lib/supabase';
 import { formatCurrency, formatCurrencyUSD, formatPercentage, getCachedUSDRate } from '../services/priceService';
@@ -12,7 +12,7 @@ interface HoldingRowProps {
   onTransactionComplete: () => void;
 }
 
-export function HoldingRow({ holding, onEdit, onDelete, onTransactionComplete }: HoldingRowProps) {
+export const HoldingRow = memo(function HoldingRow({ holding, onEdit, onDelete, onTransactionComplete }: HoldingRowProps) {
   const [showBuyModal, setShowBuyModal] = useState(false);
   const [showSellModal, setShowSellModal] = useState(false);
   const [showPriceUpdateModal, setShowPriceUpdateModal] = useState(false);
@@ -176,4 +176,4 @@ export function HoldingRow({ holding, onEdit, onDelete, onTransactionComplete }:
       )}
     </>
   );
-}
+});
