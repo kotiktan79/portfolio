@@ -28,17 +28,17 @@ export function PortfolioChart({ data, type = 'area' }: PortfolioChartProps) {
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white p-4 rounded-lg shadow-lg border border-slate-200">
-          <p className="text-sm font-semibold text-slate-700 mb-2">{payload[0].payload.date}</p>
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg border border-slate-200 dark:border-gray-700">
+          <p className="text-sm font-semibold text-slate-700 dark:text-gray-200 mb-2">{payload[0].payload.date}</p>
           <div className="space-y-1">
-            <p className="text-sm text-slate-600">
-              Değer: <span className="font-bold text-slate-900">{payload[0].value.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺</span>
+            <p className="text-sm text-slate-600 dark:text-gray-400">
+              Değer: <span className="font-bold text-slate-900 dark:text-gray-100">{payload[0].value.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺</span>
             </p>
-            <p className="text-sm text-slate-600">
-              Yatırım: <span className="font-bold text-slate-900">{payload[1].value.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺</span>
+            <p className="text-sm text-slate-600 dark:text-gray-400">
+              Yatırım: <span className="font-bold text-slate-900 dark:text-gray-100">{payload[1].value.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺</span>
             </p>
-            <p className="text-sm text-slate-600">
-              PnL: <span className={`font-bold ${payload[2].value >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            <p className="text-sm text-slate-600 dark:text-gray-400">
+              PnL: <span className={`font-bold ${payload[2].value >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                 {payload[2].value.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺
               </span>
             </p>

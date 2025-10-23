@@ -51,12 +51,12 @@ export function AllocationChart({ holdings }: AllocationChartProps) {
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white p-3 rounded-lg shadow-lg border border-slate-200">
-          <p className="text-sm font-semibold text-slate-700">{payload[0].payload.name}</p>
-          <p className="text-sm text-slate-600">
+        <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-lg border border-slate-200 dark:border-gray-700">
+          <p className="text-sm font-semibold text-slate-700 dark:text-gray-200">{payload[0].payload.name}</p>
+          <p className="text-sm text-slate-600 dark:text-gray-400">
             {payload[0].value.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺
           </p>
-          <p className="text-sm font-bold text-blue-600">{payload[0].payload.percentage}%</p>
+          <p className="text-sm font-bold text-blue-600 dark:text-blue-400">{payload[0].payload.percentage}%</p>
         </div>
       );
     }
@@ -89,7 +89,7 @@ export function AllocationChart({ holdings }: AllocationChartProps) {
           verticalAlign="bottom"
           height={36}
           formatter={(_value, entry: any) => (
-            <span className="text-sm text-slate-700">{entry.payload.name}</span>
+            <span className="text-sm text-slate-700 dark:text-gray-300">{entry.payload.name}</span>
           )}
         />
       </PieChart>
