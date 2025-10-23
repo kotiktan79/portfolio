@@ -23,6 +23,7 @@ import { AdvancedChart } from './components/AdvancedChart';
 import { BackupRestore } from './components/BackupRestore';
 import { AIPortfolioSuggestions } from './components/AIPortfolioSuggestions';
 import { MultiBenchmark } from './components/MultiBenchmark';
+import { AdvancedAnalytics } from './components/AdvancedAnalytics';
 import { Security2FA } from './components/Security2FA';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
 import { AutoRebalanceSettings } from './components/AutoRebalanceSettings';
@@ -617,6 +618,12 @@ function App() {
                 <TradingSignals holdings={holdings} />
 
                 <AIPortfolioSuggestions holdings={holdings} totalValue={totalCurrentValue} />
+
+                <AdvancedAnalytics
+                  holdings={holdings}
+                  totalValue={totalCurrentValue}
+                  totalInvestment={totalInvestment}
+                />
 
                 <MultiBenchmark portfolioValue={totalCurrentValue} initialValue={totalInvestment} />
 
