@@ -97,6 +97,7 @@ function DashboardApp() {
       setHoldings(updatedHoldings);
     } catch (error) {
       console.error('Error updating prices:', error);
+      // Edge function başarısız olsa bile mevcut fiyatları kullan
     }
   }
 

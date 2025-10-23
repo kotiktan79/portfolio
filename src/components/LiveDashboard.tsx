@@ -46,40 +46,46 @@ export function LiveDashboard({
   }, [holdings]);
 
   async function fetchPerformanceData() {
-    const now = new Date();
-    const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    try {
+      const now = new Date();
+      const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-    const { data: dailySnapshot } = await supabase
-      .from('portfolio_snapshots')
-      .select('total_value')
-      .gte('snapshot_date', dayAgo.toISOString())
-      .order('snapshot_date', { ascending: true })
-      .limit(1)
-      .maybeSingle();
+      const { data: dailySnapshot } = await supabase
+        .from('portfolio_snapshots')
+        .select('total_value')
+        .gte('snapshot_date', dayAgo.toISOString())
+        .order('snapshot_date', { ascending: true })
+        .limit(1)
+        .maybeSingle();
 
-    const { data: weeklySnapshot } = await supabase
-      .from('portfolio_snapshots')
-      .select('total_value')
-      .gte('snapshot_date', weekAgo.toISOString())
-      .order('snapshot_date', { ascending: true })
-      .limit(1)
-      .maybeSingle();
+      const { data: weeklySnapshot } = await supabase
+        .from('portfolio_snapshots')
+        .select('total_value')
+        .gte('snapshot_date', weekAgo.toISOString())
+        .order('snapshot_date', { ascending: true })
+        .limit(1)
+        .maybeSingle();
 
-    const { data: monthlySnapshot } = await supabase
-      .from('portfolio_snapshots')
-      .select('total_value')
-      .gte('snapshot_date', monthAgo.toISOString())
-      .order('snapshot_date', { ascending: true })
-      .limit(1)
-      .maybeSingle();
+      const { data: monthlySnapshot } = await supabase
+        .from('portfolio_snapshots')
+        .select('total_value')
+        .gte('snapshot_date', monthAgo.toISOString())
+        .order('snapshot_date', { ascending: true })
+        .limit(1)
+        .maybeSingle();
 
-    const daily = dailySnapshot ? ((totalValue - dailySnapshot.total_value) / dailySnapshot.total_value) * 100 : 0;
-    const weekly = weeklySnapshot ? ((totalValue - weeklySnapshot.total_value) / weeklySnapshot.total_value) * 100 : 0;
-    const monthly = monthlySnapshot ? ((totalValue - monthlySnapshot.total_value) / monthlySnapshot.total_value) * 100 : 0;
+      const daily = dailySnapshot ? ((totalValue - dailySnapshot.total_value) / dailySnapshot.total_value) * 100 : 0;
+      const weekly = weeklySnapshot ? ((totalValue - weeklySnapshot.total_value) / weeklySnapshot.total_value) * 100 : 0;
+      const monthly = monthlySnapshot ? ((totalValue - monthlySnapshot.total_value) / monthlySnapshot.total_value) * 100 : 0;
 
-    setPerformance({ daily, weekly, monthly });
+      setPerformance({ daily, weekly, monthly });
+    } catch (error) {
+      console.error('Error fetching performance data:', error);
+      // Hata olsa bile varsayılan değerleri kullan
+      setPerformance({ daily: 0, weekly: 0, monthly: 0 });
+    }
   }
 
   const toggleFullscreen = () => {
