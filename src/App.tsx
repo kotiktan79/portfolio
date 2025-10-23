@@ -191,30 +191,34 @@ function App() {
   }
 
   async function updatePricesForHoldings(holdingsToUpdate: Holding[]) {
-    const symbols = holdingsToUpdate.map(h => ({
-      symbol: h.symbol,
-      assetType: h.asset_type,
-    }));
+    try {
+      const symbols = holdingsToUpdate.map(h => ({
+        symbol: h.symbol,
+        assetType: h.asset_type,
+      }));
 
-    const prices = await fetchMultiplePrices(symbols);
+      const prices = await fetchMultiplePrices(symbols);
 
-    const updates = holdingsToUpdate.map(async (holding) => {
-      const newPrice = prices[holding.symbol];
-      if (newPrice && Math.abs(newPrice - holding.current_price) > 0.01) {
-        await supabase
-          .from('holdings')
-          .update({ current_price: newPrice, updated_at: new Date().toISOString() })
-          .eq('id', holding.id);
+      const updates = holdingsToUpdate.map(async (holding) => {
+        const newPrice = prices[holding.symbol];
+        if (newPrice && Math.abs(newPrice - holding.current_price) > 0.01) {
+          await supabase
+            .from('holdings')
+            .update({ current_price: newPrice, updated_at: new Date().toISOString() })
+            .eq('id', holding.id);
 
-        return { ...holding, current_price: newPrice };
-      }
-      return holding;
-    });
+          return { ...holding, current_price: newPrice };
+        }
+        return holding;
+      });
 
-    const updatedHoldings = await Promise.all(updates);
-    setHoldings(updatedHoldings);
+      const updatedHoldings = await Promise.all(updates);
+      setHoldings(updatedHoldings);
 
-    await calculateAndUpdatePnL(updatedHoldings);
+      await calculateAndUpdatePnL(updatedHoldings);
+    } catch (error) {
+      console.error('Error updating prices:', error);
+    }
   }
 
   async function calculateAndUpdatePnL(currentHoldings = holdings) {

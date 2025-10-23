@@ -290,7 +290,6 @@ export async function fetchBISTPrice(symbol: string): Promise<number | null> {
       }
     }
   } catch (error) {
-    console.warn(`İş Yatırım scraping failed for ${symbol}`);
   }
 
   try {
@@ -308,7 +307,6 @@ export async function fetchBISTPrice(symbol: string): Promise<number | null> {
       }
     }
   } catch (error) {
-    console.warn(`TwelveData failed for ${symbol}`);
   }
 
   return await fetchBISTFromYahoo(symbol);
@@ -339,7 +337,6 @@ export async function fetchBISTFromYahoo(symbol: string): Promise<number | null>
 
     return null;
   } catch (error) {
-    console.error(`Yahoo Finance BIST failed for ${symbol}:`, error);
     return null;
   }
 }
@@ -547,7 +544,6 @@ export async function fetchRealTimePrice(symbol: string, assetType: AssetType): 
         break;
     }
   } catch (error) {
-    console.error(`Error fetching price for ${symbol}:`, error);
   }
 
   const finalPrice = price || FALLBACK_PRICES[symbol] || 100;
@@ -558,6 +554,10 @@ export async function fetchRealTimePrice(symbol: string, assetType: AssetType): 
     timestamp: now,
     source,
   };
+
+  if (source === 'fallback') {
+    console.log(`${symbol}: Using fallback price ${finalPrice} ₺`);
+  }
 
   notifyPriceUpdate({
     symbol,
