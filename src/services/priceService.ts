@@ -339,6 +339,57 @@ export async function fetchBISTFromYahoo(symbol: string): Promise<number | null>
 export async function fetchBISTFromAlternative(symbol: string): Promise<number | null> {
   try {
     const response = await fetch(
+      `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbol}.IS&fields=regularMarketPrice`,
+      {
+        cache: 'no-cache',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+          'Accept': 'application/json',
+          'Origin': 'https://finance.yahoo.com',
+          'Referer': 'https://finance.yahoo.com/',
+        }
+      }
+    );
+
+    if (response.ok) {
+      const data = await response.json();
+      const quote = data?.quoteResponse?.result?.[0];
+      if (quote?.regularMarketPrice) {
+        const price = parseFloat(quote.regularMarketPrice);
+        console.log(`${symbol} (Yahoo v7 Alt): ${price} ₺`);
+        return price;
+      }
+    }
+  } catch (error) {
+    console.warn(`Yahoo v7 alternative failed for ${symbol}`);
+  }
+
+  try {
+    const response = await fetch(
+      `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${symbol}.IS?modules=price`,
+      {
+        cache: 'no-cache',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15',
+          'Accept': 'application/json',
+        }
+      }
+    );
+
+    if (response.ok) {
+      const data = await response.json();
+      const price = data?.quoteSummary?.result?.[0]?.price?.regularMarketPrice?.raw;
+      if (price) {
+        console.log(`${symbol} (Yahoo QuoteSummary Alt): ${price} ₺`);
+        return parseFloat(price);
+      }
+    }
+  } catch (error) {
+    console.warn(`Yahoo QuoteSummary alternative failed for ${symbol}`);
+  }
+
+  try {
+    const response = await fetch(
       `https://api.collectapi.com/economy/hisseSenedi?code=${symbol}`,
       {
         cache: 'no-cache',
@@ -359,24 +410,6 @@ export async function fetchBISTFromAlternative(symbol: string): Promise<number |
     }
   } catch (error) {
     console.warn(`CollectAPI failed for ${symbol}`);
-  }
-
-  try {
-    const response = await fetch(
-      `https://api.exchangerate.host/latest?base=TRY&symbols=${symbol}`,
-      { cache: 'no-cache' }
-    );
-
-    if (response.ok) {
-      const data = await response.json();
-      if (data.rates && data.rates[symbol]) {
-        const price = 1 / parseFloat(data.rates[symbol]);
-        console.log(`${symbol} (ExchangeRate): ${price} ₺`);
-        return price;
-      }
-    }
-  } catch (error) {
-    console.warn(`ExchangeRate failed for ${symbol}`);
   }
 
   console.log(`${symbol}: All APIs failed, will use fallback`);
@@ -434,7 +467,7 @@ const FALLBACK_PRICES: PriceData = {
 };
 
 const priceCache: { [key: string]: { price: number; timestamp: number; source: string } } = {};
-const CACHE_DURATION = 5000;
+const CACHE_DURATION = 3000;
 
 let connectionStatus: ConnectionStatus = 'disconnected';
 const statusListeners: ((status: ConnectionStatus) => void)[] = [];
