@@ -1,4 +1,4 @@
-import { TrendingUp, Award, Target, Zap } from 'lucide-react';
+import { TrendingUp, Award, Target } from 'lucide-react';
 import { Holding } from '../lib/supabase';
 
 interface PerformanceDashboardProps {
@@ -23,7 +23,6 @@ export function PerformanceDashboard({ holdings, totalValue, totalInvestment }: 
     return pnl < worstPnl ? h : worst;
   }, holdings[0]);
 
-  const avgHoldingValue = holdings.length > 0 ? totalValue / holdings.length : 0;
   const diversificationScore = Math.min(holdings.length * 10, 100);
 
   const bestPnL = bestPerformer ? ((bestPerformer.current_price - bestPerformer.purchase_price) / bestPerformer.purchase_price) * 100 : 0;
