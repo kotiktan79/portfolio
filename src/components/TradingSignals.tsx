@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { TrendingUp, TrendingDown, AlertCircle, CheckCircle, XCircle, Target, Zap, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
-import { Holding } from '../lib/supabase';
+import { Holding, supabase } from '../lib/supabase';
 import { formatCurrency, formatPercentage } from '../services/priceService';
+import { calculateRSI } from '../services/technicalIndicators';
 
 interface TradingSignalsProps {
   holdings: Holding[];
@@ -33,19 +34,32 @@ export function TradingSignals({ holdings }: TradingSignalsProps) {
     calculateSignals();
   }, [holdings]);
 
-  function calculateSignals() {
-    const calculatedSignals: Signal[] = holdings.map((holding) => {
-      const invested = holding.purchase_price * holding.quantity;
-      const value = holding.current_price * holding.quantity;
-      const pnl = value - invested;
-      const pnlPercent = invested > 0 ? (pnl / invested) * 100 : 0;
+  async function calculateSignals() {
+    const calculatedSignals: Signal[] = await Promise.all(
+      holdings.map(async (holding) => {
+        const invested = holding.purchase_price * holding.quantity;
+        const value = holding.current_price * holding.quantity;
+        const pnl = value - invested;
+        const pnlPercent = invested > 0 ? (pnl / invested) * 100 : 0;
 
-      let score = 0;
-      let reasons: string[] = [];
-      const indicators: Signal['indicators'] = {};
+        let score = 0;
+        let reasons: string[] = [];
+        const indicators: Signal['indicators'] = {};
 
-      const rsi = 50 + (Math.random() * 40 - 20);
-      indicators.rsi = rsi;
+        const { data: priceHistory } = await supabase
+          .from('price_history')
+          .select('price')
+          .eq('symbol', holding.symbol)
+          .order('timestamp', { ascending: true })
+          .limit(30);
+
+        let rsi = 50;
+        if (priceHistory && priceHistory.length >= 15) {
+          const prices = priceHistory.map(p => p.price);
+          const rsiArray = calculateRSI(prices, 14);
+          rsi = rsiArray[rsiArray.length - 1] || 50;
+        }
+        indicators.rsi = rsi;
 
       if (rsi < 30) {
         score += 2;
@@ -121,19 +135,20 @@ export function TradingSignals({ holdings }: TradingSignalsProps) {
         stopLoss = holding.current_price * 0.95;
       }
 
-      return {
-        symbol: holding.symbol,
-        action,
-        reason: reasons.join(' • '),
-        score,
-        indicators,
-        currentPrice: holding.current_price,
-        pnlPercent,
-        recommendation,
-        targetPrice,
-        stopLoss,
-      };
-    });
+        return {
+          symbol: holding.symbol,
+          action,
+          reason: reasons.join(' • '),
+          score,
+          indicators,
+          currentPrice: holding.current_price,
+          pnlPercent,
+          recommendation,
+          targetPrice,
+          stopLoss,
+        };
+      })
+    );
 
     const sorted = calculatedSignals.sort((a, b) => Math.abs(b.score) - Math.abs(a.score));
     setSignals(sorted);
