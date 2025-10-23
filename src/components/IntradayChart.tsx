@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import { TrendingUp, TrendingDown, Activity } from 'lucide-react';
 
 interface CandleData {
@@ -18,7 +18,7 @@ interface IntradayChartProps {
   assetType: string;
 }
 
-export function IntradayChart({ symbol, currentPrice, assetType }: IntradayChartProps) {
+export function IntradayChart({ symbol, currentPrice }: IntradayChartProps) {
   const [candleData, setCandleData] = useState<CandleData[]>([]);
   const [timeRange, setTimeRange] = useState<'1h' | '4h' | '1d'>('4h');
   const [loading, setLoading] = useState(false);

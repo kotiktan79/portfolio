@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Brain, TrendingUp, AlertTriangle, Target, Lightbulb } from 'lucide-react';
 import { Holding } from '../lib/supabase';
-import { calculateVolatility, calculateSharpeRatio } from '../services/technicalIndicators';
+import { calculateVolatility } from '../services/technicalIndicators';
 
 interface Suggestion {
   type: 'warning' | 'opportunity' | 'rebalance' | 'risk';

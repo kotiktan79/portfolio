@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Area, AreaChart, Bar, ComposedChart } from 'recharts';
-import { TrendingUp, Activity, BarChart3 } from 'lucide-react';
+import { BarChart3 } from 'lucide-react';
 import { calculateRSI, calculateMACD, calculateBollingerBands } from '../services/technicalIndicators';
 
 interface AdvancedChartProps {

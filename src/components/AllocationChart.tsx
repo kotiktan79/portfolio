@@ -64,12 +64,7 @@ export function AllocationChart({ holdings }: AllocationChartProps) {
   };
 
   const renderCustomLabel = (entry: any) => {
-    return {
-      value: `${entry.percentage}%`,
-      fill: '#ffffff',
-      fontSize: 14,
-      fontWeight: 'bold',
-    };
+    return `${entry.percentage}%`;
   };
 
   if (!holdings || holdings.length === 0) {

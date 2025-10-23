@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Shield, TrendingDown, AlertTriangle, DollarSign } from 'lucide-react';
+import { Shield, AlertTriangle } from 'lucide-react';
 import { Holding } from '../lib/supabase';
 
 interface StopLossSuggestion {

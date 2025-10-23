@@ -32,7 +32,6 @@ export function LiveDashboard({
   totalPnLPercent,
 }: LiveDashboardProps) {
   const [time, setTime] = useState(new Date());
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [performance, setPerformance] = useState<PerformanceData>({ daily: 0, weekly: 0, monthly: 0 });
 
   useEffect(() => {
@@ -86,10 +85,8 @@ export function LiveDashboard({
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen();
-      setIsFullscreen(true);
     } else {
       document.exitFullscreen();
-      setIsFullscreen(false);
     }
   };
 

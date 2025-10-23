@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, TrendingUp, RefreshCw, Target, Moon, Sun, Bell, BarChart3, Wifi, WifiOff, Activity, Download, Tv, DollarSign, Brain, Database, Shield, Palette } from 'lucide-react';
+import { Plus, TrendingUp, RefreshCw, Target, Moon, Sun, Bell, BarChart3, Wifi, WifiOff, Activity, Download, Tv, DollarSign, Database, Shield, Palette } from 'lucide-react';
 import { supabase, Holding, AssetType } from './lib/supabase';
 import { AddHoldingModal } from './components/AddHoldingModal';
 import { EditHoldingModal } from './components/EditHoldingModal';
@@ -24,6 +24,9 @@ import { BackupRestore } from './components/BackupRestore';
 import { AIPortfolioSuggestions } from './components/AIPortfolioSuggestions';
 import { MultiBenchmark } from './components/MultiBenchmark';
 import { Security2FA } from './components/Security2FA';
+import { LanguageSwitcher } from './components/LanguageSwitcher';
+import { AutoRebalanceSettings } from './components/AutoRebalanceSettings';
+import { PerformanceDashboard } from './components/PerformanceDashboard';
 import { useToast } from './hooks/useToast';
 import { useDarkMode } from './hooks/useDarkMode';
 import { useTheme } from './hooks/useTheme';
@@ -58,10 +61,8 @@ function App() {
   const [showAlertModal, setShowAlertModal] = useState(false);
   const [showExportImportModal, setShowExportImportModal] = useState(false);
   const [showBackupModal, setShowBackupModal] = useState(false);
-  const [showAIModal, setShowAIModal] = useState(false);
   const [show2FAModal, setShow2FAModal] = useState(false);
-  const [showAdvancedCharts, setShowAdvancedCharts] = useState(false);
-  const [showBenchmark, setShowBenchmark] = useState(false);
+  const [showAutoRebalanceModal, setShowAutoRebalanceModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAssetType, setSelectedAssetType] = useState<AssetType | 'all'>('all');
   const [sortBy, setSortBy] = useState<'name' | 'value' | 'pnl' | 'pnl_percent'>('value');
@@ -519,6 +520,7 @@ function App() {
                 >
                   <Palette size={18} />
                 </button>
+                <LanguageSwitcher />
                 <button
                   onClick={handleRefresh}
                   disabled={refreshing}
@@ -584,6 +586,13 @@ function App() {
               unrealizedProfitPercent={totalProfitLossPercent}
             />
 
+            {holdings.length > 0 && (
+              <PerformanceDashboard
+                holdings={holdings}
+                totalValue={totalCurrentValue}
+                totalInvestment={totalInvestment}
+              />
+            )}
 
             {livePnlData && (
               <div>
@@ -857,6 +866,16 @@ function App() {
           onClose={() => setShow2FAModal(false)}
           onEnable={() => {
             toast.addToast('2FA başarıyla etkinleştirildi!', 'success');
+          }}
+        />
+      )}
+
+      {showAutoRebalanceModal && (
+        <AutoRebalanceSettings
+          onClose={() => setShowAutoRebalanceModal(false)}
+          onSave={() => {
+            toast.addToast('Otomatik rebalance ayarları kaydedildi!', 'success');
+            handleRefresh();
           }}
         />
       )}

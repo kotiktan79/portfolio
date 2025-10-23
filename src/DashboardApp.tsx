@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { supabase, Holding, AssetType } from './lib/supabase';
+import { supabase, Holding } from './lib/supabase';
 import { LiveDashboard } from './components/LiveDashboard';
 import {
   fetchMultiplePrices,

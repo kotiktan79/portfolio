@@ -58,7 +58,7 @@ Bu rapor ${new Date().toLocaleString('tr-TR')} tarihinde oluşturulmuştur.
     setGenerating(true);
 
     const transactions = await getAllTransactions();
-    const sellTransactions = transactions.filter(t => t.type === 'sell');
+    const sellTransactions = transactions.filter(t => t.transaction_type === 'sell');
 
     let totalProfit = 0;
     let totalLoss = 0;
@@ -78,7 +78,7 @@ ${sellTransactions.map(t => {
 
   return `
 ${new Date(t.created_at).toLocaleDateString('tr-TR')}
-Varlık: ${t.symbol}
+Varlık: ${t.holding_id}
 Miktar: ${t.quantity}
 Fiyat: ${t.price.toFixed(2)} ₺
 Tutar: ${t.total_amount.toFixed(2)} ₺
