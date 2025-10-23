@@ -38,16 +38,18 @@ Deno.serve(async (req: Request) => {
     }
 
     const prices: Record<string, BISTPrice> = {};
+    const results = await Promise.allSettled(
+      symbols.map(symbol => fetchBISTPrice(symbol.trim()))
+    );
 
-    for (const symbol of symbols) {
-      const price = await fetchBISTPrice(symbol.trim());
-      if (price) {
-        prices[symbol] = price;
+    results.forEach((result, index) => {
+      if (result.status === 'fulfilled' && result.value) {
+        prices[symbols[index].trim()] = result.value;
       }
-    }
+    });
 
     return new Response(
-      JSON.stringify({ success: true, data: prices }),
+      JSON.stringify({ success: true, data: prices, count: Object.keys(prices).length }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
@@ -66,33 +68,78 @@ Deno.serve(async (req: Request) => {
 
 async function fetchBISTPrice(symbol: string): Promise<BISTPrice | null> {
   try {
-    const yahooSymbol = `${symbol}.IS`;
     const response = await fetch(
-      `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=1m&range=1d`,
+      `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbol}.IS&fields=regularMarketPrice,regularMarketChange,regularMarketChangePercent,regularMarketVolume,regularMarketPreviousClose`,
       {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         },
       }
     );
 
     if (!response.ok) {
-      console.log(`Yahoo failed for ${symbol}, trying alternative...`);
-      return await fetchFromAlternative(symbol);
+      console.log(`Yahoo v7 failed for ${symbol}, trying v8...`);
+      return await fetchFromYahooV8(symbol);
+    }
+
+    const data = await response.json();
+    const quote = data?.quoteResponse?.result?.[0];
+    
+    if (!quote || !quote.regularMarketPrice) {
+      return await fetchFromYahooV8(symbol);
+    }
+
+    const currentPrice = quote.regularMarketPrice;
+    const previousClose = quote.regularMarketPreviousClose || currentPrice;
+    const change = quote.regularMarketChange || 0;
+    const changePercent = quote.regularMarketChangePercent || 0;
+
+    console.log(`✅ ${symbol}: ${currentPrice} TRY (Yahoo v7)`);
+
+    return {
+      symbol,
+      price: currentPrice,
+      change,
+      changePercent,
+      volume: quote.regularMarketVolume || 0,
+      timestamp: new Date().toISOString(),
+    };
+  } catch (error) {
+    console.error(`Yahoo v7 error for ${symbol}:`, error);
+    return await fetchFromYahooV8(symbol);
+  }
+}
+
+async function fetchFromYahooV8(symbol: string): Promise<BISTPrice | null> {
+  try {
+    const response = await fetch(
+      `https://query2.finance.yahoo.com/v8/finance/chart/${symbol}.IS?interval=1m&range=1d`,
+      {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      console.log(`Yahoo v8 failed for ${symbol}, trying quoteSummary...`);
+      return await fetchFromQuoteSummary(symbol);
     }
 
     const data = await response.json();
     const result = data?.chart?.result?.[0];
     const meta = result?.meta;
     
-    if (!meta) {
-      return await fetchFromAlternative(symbol);
+    if (!meta || !meta.regularMarketPrice) {
+      return await fetchFromQuoteSummary(symbol);
     }
 
-    const currentPrice = meta.regularMarketPrice || meta.previousClose;
-    const previousClose = meta.chartPreviousClose || meta.previousClose;
+    const currentPrice = meta.regularMarketPrice;
+    const previousClose = meta.chartPreviousClose || meta.previousClose || currentPrice;
     const change = currentPrice - previousClose;
     const changePercent = (change / previousClose) * 100;
+
+    console.log(`✅ ${symbol}: ${currentPrice} TRY (Yahoo v8)`);
 
     return {
       symbol,
@@ -103,38 +150,40 @@ async function fetchBISTPrice(symbol: string): Promise<BISTPrice | null> {
       timestamp: new Date().toISOString(),
     };
   } catch (error) {
-    console.error(`Error fetching ${symbol}:`, error);
-    return await fetchFromAlternative(symbol);
+    console.error(`Yahoo v8 error for ${symbol}:`, error);
+    return await fetchFromQuoteSummary(symbol);
   }
 }
 
-async function fetchFromAlternative(symbol: string): Promise<BISTPrice | null> {
+async function fetchFromQuoteSummary(symbol: string): Promise<BISTPrice | null> {
   try {
     const response = await fetch(
-      `https://query2.finance.yahoo.com/v10/finance/quoteSummary/${symbol}.IS?modules=price`,
+      `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${symbol}.IS?modules=price,summaryDetail`,
       {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         },
       }
     );
 
     if (!response.ok) {
-      console.log(`Alternative Yahoo failed for ${symbol}`);
+      console.log(`QuoteSummary failed for ${symbol}`);
       return null;
     }
 
     const data = await response.json();
     const price = data?.quoteSummary?.result?.[0]?.price;
 
-    if (!price) {
+    if (!price || !price.regularMarketPrice?.raw) {
       return null;
     }
 
-    const currentPrice = price.regularMarketPrice?.raw || price.previousClose?.raw;
-    const previousClose = price.regularMarketPreviousClose?.raw;
+    const currentPrice = price.regularMarketPrice.raw;
+    const previousClose = price.regularMarketPreviousClose?.raw || currentPrice;
     const change = price.regularMarketChange?.raw || 0;
     const changePercent = price.regularMarketChangePercent?.raw || 0;
+
+    console.log(`✅ ${symbol}: ${currentPrice} TRY (QuoteSummary)`);
 
     return {
       symbol,
@@ -145,7 +194,7 @@ async function fetchFromAlternative(symbol: string): Promise<BISTPrice | null> {
       timestamp: new Date().toISOString(),
     };
   } catch (error) {
-    console.error(`Alternative fetch failed for ${symbol}:`, error);
+    console.error(`QuoteSummary error for ${symbol}:`, error);
     return null;
   }
 }
