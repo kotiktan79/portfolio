@@ -590,7 +590,9 @@ export async function fetchRealTimePrice(symbol: string, assetType: AssetType): 
   const now = Date.now();
   const cached = priceCache[symbol];
 
-  if (cached && now - cached.timestamp < CACHE_DURATION) {
+  const cacheDuration = assetType === 'stock' ? 0 : CACHE_DURATION;
+
+  if (cached && now - cached.timestamp < cacheDuration) {
     return cached.price;
   }
 
@@ -663,12 +665,15 @@ export async function fetchMultiplePrices(symbols: { symbol: string; assetType: 
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const symbolList = bistStocks.map(s => s.symbol).join(',');
+      const timestamp = Date.now();
       const response = await fetch(
-        `${supabaseUrl}/functions/v1/bist-live-prices?symbols=${symbolList}`,
+        `${supabaseUrl}/functions/v1/bist-live-prices?symbols=${symbolList}&t=${timestamp}`,
         {
           cache: 'no-cache',
           headers: {
             'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
           }
         }
       );
@@ -677,8 +682,23 @@ export async function fetchMultiplePrices(symbols: { symbol: string; assetType: 
         const data = await response.json();
         if (data.success && data.data) {
           Object.entries(data.data).forEach(([symbol, priceData]: [string, any]) => {
-            prices[symbol] = priceData.price;
-            console.log(`${symbol} (Bulk Edge Function): ${priceData.price} ₺`);
+            const price = priceData.price;
+            prices[symbol] = price;
+
+            priceCache[symbol] = {
+              price,
+              timestamp: Date.now(),
+              source: 'api',
+            };
+
+            notifyPriceUpdate({
+              symbol,
+              price,
+              timestamp: Date.now(),
+              source: 'Edge Function',
+            });
+
+            console.log(`${symbol}: ${price} ₺ (Edge Function)`);
           });
         }
       }
