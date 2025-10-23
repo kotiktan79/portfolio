@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { TrendingUp, TrendingDown, DollarSign, Activity, ArrowUp, ArrowDown, Maximize2 } from 'lucide-react';
-import { Holding } from '../lib/supabase';
+import { TrendingUp, TrendingDown, DollarSign, Activity, ArrowUp, ArrowDown, Maximize2, PieChart, AlertTriangle, Target, Zap } from 'lucide-react';
+import { Holding, supabase } from '../lib/supabase';
 import { formatCurrency, formatPercentage } from '../services/priceService';
 
 interface LiveDashboardProps {
@@ -18,6 +18,12 @@ interface HoldingWithPnL extends Holding {
   weight: number;
 }
 
+interface PerformanceData {
+  daily: number;
+  weekly: number;
+  monthly: number;
+}
+
 export function LiveDashboard({
   holdings,
   totalValue,
@@ -27,6 +33,7 @@ export function LiveDashboard({
 }: LiveDashboardProps) {
   const [time, setTime] = useState(new Date());
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [performance, setPerformance] = useState<PerformanceData>({ daily: 0, weekly: 0, monthly: 0 });
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -34,6 +41,47 @@ export function LiveDashboard({
     }, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    fetchPerformanceData();
+  }, [holdings]);
+
+  async function fetchPerformanceData() {
+    const now = new Date();
+    const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    const { data: dailySnapshot } = await supabase
+      .from('portfolio_snapshots')
+      .select('total_value')
+      .gte('snapshot_date', dayAgo.toISOString())
+      .order('snapshot_date', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    const { data: weeklySnapshot } = await supabase
+      .from('portfolio_snapshots')
+      .select('total_value')
+      .gte('snapshot_date', weekAgo.toISOString())
+      .order('snapshot_date', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    const { data: monthlySnapshot } = await supabase
+      .from('portfolio_snapshots')
+      .select('total_value')
+      .gte('snapshot_date', monthAgo.toISOString())
+      .order('snapshot_date', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    const daily = dailySnapshot ? ((totalValue - dailySnapshot.total_value) / dailySnapshot.total_value) * 100 : 0;
+    const weekly = weeklySnapshot ? ((totalValue - weeklySnapshot.total_value) / weeklySnapshot.total_value) * 100 : 0;
+    const monthly = monthlySnapshot ? ((totalValue - monthlySnapshot.total_value) / monthlySnapshot.total_value) * 100 : 0;
+
+    setPerformance({ daily, weekly, monthly });
+  }
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -64,6 +112,30 @@ export function LiveDashboard({
   const sortedByPnL = [...holdingsWithPnL].sort((a, b) => b.pnl - a.pnl);
   const topGainers = sortedByPnL.slice(0, 3);
   const topLosers = sortedByPnL.reverse().slice(0, 3);
+
+  const assetTypeBreakdown = holdingsWithPnL.reduce((acc, h) => {
+    const type = h.asset_type || 'other';
+    if (!acc[type]) {
+      acc[type] = { value: 0, count: 0, pnl: 0 };
+    }
+    acc[type].value += h.value;
+    acc[type].count += 1;
+    acc[type].pnl += h.pnl;
+    return acc;
+  }, {} as Record<string, { value: number; count: number; pnl: number }>);
+
+  const assetTypes = Object.entries(assetTypeBreakdown).map(([type, data]) => ({
+    type,
+    ...data,
+    percentage: (data.value / totalValue) * 100,
+  }));
+
+  const volatileAssets = holdingsWithPnL.filter(h => Math.abs(h.pnlPercent) > 10);
+  const stableAssets = holdingsWithPnL.filter(h => Math.abs(h.pnlPercent) <= 5);
+
+  const avgReturn = holdingsWithPnL.length > 0
+    ? holdingsWithPnL.reduce((sum, h) => sum + h.pnlPercent, 0) / holdingsWithPnL.length
+    : 0;
 
   const getColorClass = (value: number) => {
     if (value > 0) return 'text-green-400';
@@ -144,6 +216,168 @@ export function LiveDashboard({
           </div>
         </div>
 
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-gradient-to-br from-emerald-600/20 to-emerald-800/20 backdrop-blur-xl rounded-2xl p-6 border border-emerald-500/30 shadow-xl">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Zap className="text-emerald-400" size={20} />
+                <p className="text-emerald-200 font-semibold">Günlük</p>
+              </div>
+              {performance.daily >= 0 ? <ArrowUp className="text-emerald-400" size={20} /> : <ArrowDown className="text-red-400" size={20} />}
+            </div>
+            <p className={`text-3xl font-bold ${getColorClass(performance.daily)}`}>
+              {formatPercentage(performance.daily)}
+            </p>
+            <p className="text-emerald-200/60 text-sm mt-2">Son 24 saat</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-cyan-600/20 to-cyan-800/20 backdrop-blur-xl rounded-2xl p-6 border border-cyan-500/30 shadow-xl">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="text-cyan-400" size={20} />
+                <p className="text-cyan-200 font-semibold">Haftalık</p>
+              </div>
+              {performance.weekly >= 0 ? <ArrowUp className="text-cyan-400" size={20} /> : <ArrowDown className="text-red-400" size={20} />}
+            </div>
+            <p className={`text-3xl font-bold ${getColorClass(performance.weekly)}`}>
+              {formatPercentage(performance.weekly)}
+            </p>
+            <p className="text-cyan-200/60 text-sm mt-2">Son 7 gün</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-violet-600/20 to-violet-800/20 backdrop-blur-xl rounded-2xl p-6 border border-violet-500/30 shadow-xl">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Target className="text-violet-400" size={20} />
+                <p className="text-violet-200 font-semibold">Aylık</p>
+              </div>
+              {performance.monthly >= 0 ? <ArrowUp className="text-violet-400" size={20} /> : <ArrowDown className="text-red-400" size={20} />}
+            </div>
+            <p className={`text-3xl font-bold ${getColorClass(performance.monthly)}`}>
+              {formatPercentage(performance.monthly)}
+            </p>
+            <p className="text-violet-200/60 text-sm mt-2">Son 30 gün</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          <div className="bg-gray-800/40 backdrop-blur-xl rounded-2xl p-6 border border-gray-700/50 shadow-xl">
+            <div className="flex items-center gap-3 mb-4">
+              <PieChart className="text-orange-400" size={24} />
+              <h3 className="text-xl font-bold">Varlık Dağılımı</h3>
+            </div>
+            <div className="space-y-3">
+              {assetTypes.map((asset) => {
+                const getTypeColor = (type: string) => {
+                  switch (type) {
+                    case 'stock': return 'bg-blue-500';
+                    case 'crypto': return 'bg-yellow-500';
+                    case 'commodity': return 'bg-orange-500';
+                    case 'forex': return 'bg-green-500';
+                    default: return 'bg-gray-500';
+                  }
+                };
+
+                const getTypeName = (type: string) => {
+                  switch (type) {
+                    case 'stock': return 'Hisse';
+                    case 'crypto': return 'Kripto';
+                    case 'commodity': return 'Emtia';
+                    case 'forex': return 'Forex';
+                    default: return 'Diğer';
+                  }
+                };
+
+                return (
+                  <div key={asset.type}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-3 h-3 rounded-full ${getTypeColor(asset.type)}`}></div>
+                        <span className="text-gray-300 font-semibold">{getTypeName(asset.type)}</span>
+                      </div>
+                      <span className="text-white font-bold">{asset.percentage.toFixed(1)}%</span>
+                    </div>
+                    <div className="w-full bg-gray-700/30 rounded-full h-2">
+                      <div
+                        className={`h-2 rounded-full ${getTypeColor(asset.type)}`}
+                        style={{ width: `${asset.percentage}%` }}
+                      ></div>
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-400 mt-1">
+                      <span>{asset.count} adet</span>
+                      <span className={getColorClass(asset.pnl)}>
+                        {formatCurrency(asset.pnl)} ₺
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="bg-gray-800/40 backdrop-blur-xl rounded-2xl p-6 border border-gray-700/50 shadow-xl">
+            <div className="flex items-center gap-3 mb-4">
+              <Activity className="text-blue-400" size={24} />
+              <h3 className="text-xl font-bold">Piyasa İstatistikleri</h3>
+            </div>
+            <div className="space-y-4">
+              <div className="bg-gray-700/30 rounded-xl p-4">
+                <p className="text-gray-400 text-sm mb-1">Ortalama Getiri</p>
+                <p className={`text-2xl font-bold ${getColorClass(avgReturn)}`}>
+                  {formatPercentage(avgReturn)}
+                </p>
+              </div>
+              <div className="bg-gray-700/30 rounded-xl p-4">
+                <p className="text-gray-400 text-sm mb-1">Volatil Varlıklar</p>
+                <p className="text-2xl font-bold text-yellow-400">
+                  {volatileAssets.length}
+                </p>
+                <p className="text-xs text-gray-400 mt-1">%10+ değişim</p>
+              </div>
+              <div className="bg-gray-700/30 rounded-xl p-4">
+                <p className="text-gray-400 text-sm mb-1">Stabil Varlıklar</p>
+                <p className="text-2xl font-bold text-green-400">
+                  {stableAssets.length}
+                </p>
+                <p className="text-xs text-gray-400 mt-1">±%5 aralığında</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-gray-800/40 backdrop-blur-xl rounded-2xl p-6 border border-gray-700/50 shadow-xl">
+            <div className="flex items-center gap-3 mb-4">
+              <AlertTriangle className="text-red-400" size={24} />
+              <h3 className="text-xl font-bold">Risk Göstergeleri</h3>
+            </div>
+            <div className="space-y-3">
+              {volatileAssets.length > 5 && (
+                <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
+                  <p className="text-red-400 font-semibold mb-1">Yüksek Volatilite</p>
+                  <p className="text-sm text-gray-300">{volatileAssets.length} varlık %10+ değişim gösteriyor</p>
+                </div>
+              )}
+              {totalPnLPercent < -10 && (
+                <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
+                  <p className="text-red-400 font-semibold mb-1">Portföy Kayıp</p>
+                  <p className="text-sm text-gray-300">Toplam kayıp %10'un üzerinde</p>
+                </div>
+              )}
+              {assetTypes.some(a => a.percentage > 60) && (
+                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
+                  <p className="text-yellow-400 font-semibold mb-1">Konsantrasyon Riski</p>
+                  <p className="text-sm text-gray-300">Portföyün %60+ tek varlık tipinde</p>
+                </div>
+              )}
+              {volatileAssets.length <= 2 && totalPnLPercent > 0 && !assetTypes.some(a => a.percentage > 60) && (
+                <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4">
+                  <p className="text-green-400 font-semibold mb-1">Düşük Risk</p>
+                  <p className="text-sm text-gray-300">Portföy dengeli ve stabil görünüyor</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           <div className="bg-gray-800/40 backdrop-blur-xl rounded-3xl p-6 border border-gray-700/50 shadow-2xl">
             <div className="flex items-center gap-3 mb-6">
@@ -206,6 +440,42 @@ export function LiveDashboard({
                       {formatCurrency(holding.pnl)} ₺
                     </span>
                   </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-gray-800/40 backdrop-blur-xl rounded-3xl p-6 border border-gray-700/50 shadow-2xl mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold">Canlı Fiyat Hareketleri</h2>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span className="text-sm text-gray-400">Gerçek Zamanlı</span>
+            </div>
+          </div>
+          <div className="overflow-hidden">
+            <div className="flex gap-4 animate-scroll">
+              {[...holdingsWithPnL, ...holdingsWithPnL].map((holding, index) => (
+                <div
+                  key={`${holding.id}-${index}`}
+                  className={`flex-shrink-0 w-64 rounded-xl border-2 p-4 ${getBgColorClass(holding.pnlPercent)}`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-lg font-bold">{holding.symbol}</span>
+                    {holding.pnlPercent >= 0 ? (
+                      <ArrowUp className="text-green-400" size={20} />
+                    ) : (
+                      <ArrowDown className="text-red-400" size={20} />
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl font-bold">{formatCurrency(holding.current_price)} ₺</span>
+                    <span className={`text-lg font-bold ${getColorClass(holding.pnlPercent)}`}>
+                      {formatPercentage(holding.pnlPercent)}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1 uppercase">{holding.asset_type}</p>
                 </div>
               ))}
             </div>
