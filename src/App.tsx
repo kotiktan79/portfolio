@@ -491,25 +491,37 @@ function App() {
             </div>
           </div>
 
-          <div className="p-4 md:p-8 bg-gradient-to-b from-slate-50 to-white dark:from-gray-900 dark:to-gray-800 border-b border-slate-200 dark:border-gray-700 space-y-6">
+          <div className="p-4 md:p-8 bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 border-b border-slate-200 dark:border-gray-700 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-              <div className="bg-gradient-to-br from-white to-blue-50 dark:from-gray-800 dark:to-gray-750 p-4 md:p-6 rounded-xl shadow-lg border border-blue-200/50 dark:border-gray-700 hover:shadow-xl transition-all">
-                <p className="text-sm font-semibold text-blue-600 dark:text-blue-400 mb-2">Toplam Yatırım</p>
-                <p className="text-xl md:text-2xl font-bold text-slate-900 dark:text-gray-100">
-                  {formatCurrency(totalInvestment)} ₺
-                </p>
-                <p className="text-sm text-blue-600 dark:text-blue-400 mt-1 font-medium">
-                  ${formatCurrency(totalInvestmentUSD)}
-                </p>
+              <div className="group relative bg-gradient-to-br from-white via-blue-50 to-blue-100/50 dark:from-gray-800 dark:via-gray-800 dark:to-blue-900/20 p-6 md:p-8 rounded-2xl shadow-xl border border-blue-200/60 dark:border-blue-500/30 hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl group-hover:bg-blue-500/20 transition-all duration-500"></div>
+                <div className="relative z-10">
+                  <p className="text-xs md:text-sm font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 mb-3 flex items-center gap-2">
+                    <DollarSign size={16} />
+                    Toplam Yatırım
+                  </p>
+                  <p className="text-2xl md:text-4xl font-black text-slate-900 dark:text-white mb-2">
+                    {formatCurrency(totalInvestment)} ₺
+                  </p>
+                  <p className="text-sm md:text-base text-blue-600/80 dark:text-blue-400/80 font-semibold">
+                    ${formatCurrency(totalInvestmentUSD)}
+                  </p>
+                </div>
               </div>
-              <div className="bg-gradient-to-br from-white to-green-50 dark:from-gray-800 dark:to-gray-750 p-4 md:p-6 rounded-xl shadow-lg border border-green-200/50 dark:border-gray-700 hover:shadow-xl transition-all">
-                <p className="text-sm font-semibold text-green-600 dark:text-green-400 mb-2">Güncel Değer</p>
-                <p className="text-xl md:text-2xl font-bold text-slate-900 dark:text-gray-100">
-                  {formatCurrency(totalCurrentValue)} ₺
-                </p>
-                <p className="text-sm text-green-600 dark:text-green-400 mt-1 font-medium">
-                  ${formatCurrency(totalCurrentValueUSD)}
-                </p>
+              <div className="group relative bg-gradient-to-br from-white via-green-50 to-emerald-100/50 dark:from-gray-800 dark:via-gray-800 dark:to-green-900/20 p-6 md:p-8 rounded-2xl shadow-xl border border-green-200/60 dark:border-green-500/30 hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/10 rounded-full blur-3xl group-hover:bg-green-500/20 transition-all duration-500"></div>
+                <div className="relative z-10">
+                  <p className="text-xs md:text-sm font-bold uppercase tracking-wider text-green-600 dark:text-green-400 mb-3 flex items-center gap-2">
+                    <TrendingUp size={16} />
+                    Güncel Değer
+                  </p>
+                  <p className="text-2xl md:text-4xl font-black text-slate-900 dark:text-white mb-2">
+                    {formatCurrency(totalCurrentValue)} ₺
+                  </p>
+                  <p className="text-sm md:text-base text-green-600/80 dark:text-green-400/80 font-semibold">
+                    ${formatCurrency(totalCurrentValueUSD)}
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -703,21 +715,25 @@ function App() {
           </div>
         )}
 
-        <div className="mt-6 text-center text-sm text-slate-600 space-y-1">
-          <p>Fiyatlar her 5 saniyede bir otomatik olarak güncellenir</p>
-          {lastUpdate && (
-            <p className="text-xs text-slate-500">
-              Son Güncelleme: {lastUpdate}
-            </p>
-          )}
-          <div className="flex items-center justify-center gap-4 mt-2 text-xs">
-            <div className="flex items-center gap-1">
-              <Activity className="text-green-500" size={14} />
-              <span>WebSocket (Gerçek Zamanlı)</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <RefreshCw className="text-blue-500" size={14} />
-              <span>REST API (5 sn)</span>
+        <div className="mt-8 mb-4">
+          <div className="bg-gradient-to-r from-slate-100 via-blue-50 to-slate-100 dark:from-gray-900 dark:via-blue-900/20 dark:to-gray-900 p-6 rounded-2xl shadow-lg border border-slate-200 dark:border-gray-700">
+            <div className="text-center space-y-3">
+              <p className="text-sm font-semibold text-slate-700 dark:text-gray-300">Fiyatlar her 3 saniyede otomatik güncellenir</p>
+              {lastUpdate && (
+                <p className="text-xs text-slate-500 dark:text-gray-500">
+                  Son Güncelleme: {lastUpdate}
+                </p>
+              )}
+              <div className="flex items-center justify-center gap-6 mt-3">
+                <div className="flex items-center gap-2 px-4 py-2 bg-green-100 dark:bg-green-900/30 rounded-full">
+                  <Activity className="text-green-600 dark:text-green-400 animate-pulse" size={16} />
+                  <span className="text-xs font-semibold text-green-700 dark:text-green-300">WebSocket Aktif</span>
+                </div>
+                <div className="flex items-center gap-2 px-4 py-2 bg-blue-100 dark:bg-blue-900/30 rounded-full">
+                  <RefreshCw className="text-blue-600 dark:text-blue-400" size={16} />
+                  <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">REST API (3sn)</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>

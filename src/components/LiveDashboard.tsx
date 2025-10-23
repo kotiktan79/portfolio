@@ -182,81 +182,99 @@ export function LiveDashboard({
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-3 sm:mb-4 md:mb-6">
-          <div className="sm:col-span-2 bg-gradient-to-br from-blue-600/20 to-blue-800/20 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 border border-blue-500/30 shadow-2xl">
-            <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3 md:mb-4">
-              <DollarSign className="text-blue-400" size={20} />
-              <p className="text-blue-200 text-sm sm:text-base md:text-lg lg:text-xl font-semibold">Toplam Değer</p>
-            </div>
-            <p className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-2">{formatCurrency(totalValue, 0)} ₺</p>
-            <div className="flex items-center gap-2 sm:gap-3 md:gap-4 mt-2 sm:mt-3 md:mt-4">
-              <div className="flex items-center gap-1 sm:gap-2">
-                {totalPnL >= 0 ? (
-                  <ArrowUp className="text-green-400" size={16} />
-                ) : (
-                  <ArrowDown className="text-red-400" size={16} />
-                )}
-                <span className={`text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold ${getColorClass(totalPnL)}`}>
-                  {formatCurrency(Math.abs(totalPnL), 0)} ₺
+          <div className="group sm:col-span-2 relative bg-gradient-to-br from-blue-600/30 to-blue-900/30 backdrop-blur-2xl rounded-3xl p-8 border-2 border-blue-500/40 shadow-2xl hover:shadow-blue-500/40 transition-all duration-300 overflow-hidden">
+            <div className="absolute top-0 right-0 w-40 h-40 bg-blue-400/20 rounded-full blur-3xl group-hover:bg-blue-400/30 transition-all"></div>
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-4">
+                <DollarSign className="text-blue-400 animate-pulse" size={24} />
+                <p className="text-blue-100 text-lg font-bold uppercase tracking-wider">Toplam Değer</p>
+              </div>
+              <p className="text-6xl font-black mb-4 bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">{formatCurrency(totalValue, 0)} ₺</p>
+              <div className="flex items-center gap-4 mt-4">
+                <div className="flex items-center gap-2 px-4 py-2 bg-white/10 rounded-xl backdrop-blur-sm">
+                  {totalPnL >= 0 ? (
+                    <ArrowUp className="text-green-400" size={20} />
+                  ) : (
+                    <ArrowDown className="text-red-400" size={20} />
+                  )}
+                  <span className={`text-2xl font-black ${getColorClass(totalPnL)}`}>
+                    {formatCurrency(Math.abs(totalPnL), 0)} ₺
+                  </span>
+                </div>
+                <span className={`text-2xl font-black ${getColorClass(totalPnL)}`}>
+                  {formatPercentage(totalPnLPercent)}
                 </span>
               </div>
-              <span className={`text-base sm:text-lg md:text-xl lg:text-2xl font-bold ${getColorClass(totalPnL)}`}>
-                {formatPercentage(totalPnLPercent)}
-              </span>
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-purple-600/20 to-purple-800/20 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 border border-purple-500/30 shadow-2xl">
-            <p className="text-purple-200 text-xs sm:text-sm md:text-base lg:text-lg font-semibold mb-1 sm:mb-2">Yatırım</p>
-            <p className="text-2xl sm:text-3xl md:text-4xl font-bold">{formatCurrency(totalInvestment, 0)} ₺</p>
+          <div className="group relative bg-gradient-to-br from-orange-600/30 to-orange-800/30 backdrop-blur-2xl rounded-3xl p-8 border-2 border-orange-500/40 shadow-2xl hover:shadow-orange-500/30 hover:scale-105 transition-all duration-300 overflow-hidden">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-orange-400/20 rounded-full blur-2xl group-hover:bg-orange-400/30 transition-all"></div>
+            <div className="relative z-10">
+              <p className="text-orange-100 text-sm font-bold uppercase tracking-wider mb-3">Yatırım</p>
+              <p className="text-4xl font-black">{formatCurrency(totalInvestment, 0)} ₺</p>
+            </div>
           </div>
 
-          <div className="bg-gradient-to-br from-teal-600/20 to-teal-800/20 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 border border-teal-500/30 shadow-2xl">
-            <p className="text-teal-200 text-xs sm:text-sm md:text-base lg:text-lg font-semibold mb-1 sm:mb-2">Toplam Varlık</p>
-            <p className="text-2xl sm:text-3xl md:text-4xl font-bold">{holdings.length}</p>
+          <div className="group relative bg-gradient-to-br from-teal-600/30 to-teal-800/30 backdrop-blur-2xl rounded-3xl p-8 border-2 border-teal-500/40 shadow-2xl hover:shadow-teal-500/30 hover:scale-105 transition-all duration-300 overflow-hidden">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-teal-400/20 rounded-full blur-2xl group-hover:bg-teal-400/30 transition-all"></div>
+            <div className="relative z-10">
+              <p className="text-teal-100 text-sm font-bold uppercase tracking-wider mb-3">Toplam Varlık</p>
+              <p className="text-4xl font-black">{holdings.length}</p>
+            </div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 md:gap-6 mb-3 sm:mb-4 md:mb-6">
-          <div className="bg-gradient-to-br from-emerald-600/20 to-emerald-800/20 backdrop-blur-xl rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 border border-emerald-500/30 shadow-xl">
-            <div className="flex items-center justify-between mb-2 sm:mb-3">
-              <div className="flex items-center gap-1 sm:gap-2">
-                <Zap className="text-emerald-400" size={16} />
-                <p className="text-emerald-200 text-xs sm:text-sm md:text-base font-semibold">Günlük</p>
+          <div className="group relative bg-gradient-to-br from-emerald-600/30 to-emerald-800/30 backdrop-blur-2xl rounded-2xl p-6 border-2 border-emerald-500/40 shadow-2xl hover:shadow-emerald-500/30 hover:scale-105 transition-all duration-300 overflow-hidden">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-400/20 rounded-full blur-2xl group-hover:bg-emerald-400/30 transition-all"></div>
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Zap className="text-emerald-400 animate-pulse" size={20} />
+                  <p className="text-emerald-100 text-sm font-bold uppercase tracking-wider">Günlük</p>
+                </div>
+                {performance.daily >= 0 ? <ArrowUp className="text-emerald-400" size={20} /> : <ArrowDown className="text-red-400" size={20} />}
               </div>
-              {performance.daily >= 0 ? <ArrowUp className="text-emerald-400" size={16} /> : <ArrowDown className="text-red-400" size={16} />}
+              <p className={`text-4xl font-black ${getColorClass(performance.daily)} mb-2`}>
+                {formatPercentage(performance.daily)}
+              </p>
+              <p className="text-emerald-200/70 text-sm font-semibold">Son 24 saat</p>
             </div>
-            <p className={`text-xl sm:text-2xl md:text-3xl font-bold ${getColorClass(performance.daily)}`}>
-              {formatPercentage(performance.daily)}
-            </p>
-            <p className="text-emerald-200/60 text-xs sm:text-sm mt-1 sm:mt-2">Son 24 saat</p>
           </div>
 
-          <div className="bg-gradient-to-br from-cyan-600/20 to-cyan-800/20 backdrop-blur-xl rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 border border-cyan-500/30 shadow-xl">
-            <div className="flex items-center justify-between mb-2 sm:mb-3">
-              <div className="flex items-center gap-1 sm:gap-2">
-                <TrendingUp className="text-cyan-400" size={16} />
-                <p className="text-cyan-200 text-xs sm:text-sm md:text-base font-semibold">Haftalık</p>
+          <div className="group relative bg-gradient-to-br from-cyan-600/30 to-cyan-800/30 backdrop-blur-2xl rounded-2xl p-6 border-2 border-cyan-500/40 shadow-2xl hover:shadow-cyan-500/30 hover:scale-105 transition-all duration-300 overflow-hidden">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-400/20 rounded-full blur-2xl group-hover:bg-cyan-400/30 transition-all"></div>
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="text-cyan-400" size={20} />
+                  <p className="text-cyan-100 text-sm font-bold uppercase tracking-wider">Haftalık</p>
+                </div>
+                {performance.weekly >= 0 ? <ArrowUp className="text-cyan-400" size={20} /> : <ArrowDown className="text-red-400" size={20} />}
               </div>
-              {performance.weekly >= 0 ? <ArrowUp className="text-cyan-400" size={16} /> : <ArrowDown className="text-red-400" size={16} />}
+              <p className={`text-4xl font-black ${getColorClass(performance.weekly)} mb-2`}>
+                {formatPercentage(performance.weekly)}
+              </p>
+              <p className="text-cyan-200/70 text-sm font-semibold">Son 7 gün</p>
             </div>
-            <p className={`text-xl sm:text-2xl md:text-3xl font-bold ${getColorClass(performance.weekly)}`}>
-              {formatPercentage(performance.weekly)}
-            </p>
-            <p className="text-cyan-200/60 text-xs sm:text-sm mt-1 sm:mt-2">Son 7 gün</p>
           </div>
 
-          <div className="bg-gradient-to-br from-violet-600/20 to-violet-800/20 backdrop-blur-xl rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 border border-violet-500/30 shadow-xl">
-            <div className="flex items-center justify-between mb-2 sm:mb-3">
-              <div className="flex items-center gap-1 sm:gap-2">
-                <Target className="text-violet-400" size={16} />
-                <p className="text-violet-200 text-xs sm:text-sm md:text-base font-semibold">Aylık</p>
+          <div className="group relative bg-gradient-to-br from-blue-600/30 to-blue-800/30 backdrop-blur-2xl rounded-2xl p-6 border-2 border-blue-500/40 shadow-2xl hover:shadow-blue-500/30 hover:scale-105 transition-all duration-300 overflow-hidden">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-blue-400/20 rounded-full blur-2xl group-hover:bg-blue-400/30 transition-all"></div>
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Target className="text-blue-400" size={20} />
+                  <p className="text-blue-100 text-sm font-bold uppercase tracking-wider">Aylık</p>
+                </div>
+                {performance.monthly >= 0 ? <ArrowUp className="text-blue-400" size={20} /> : <ArrowDown className="text-red-400" size={20} />}
               </div>
-              {performance.monthly >= 0 ? <ArrowUp className="text-violet-400" size={16} /> : <ArrowDown className="text-red-400" size={16} />}
+              <p className={`text-4xl font-black ${getColorClass(performance.monthly)} mb-2`}>
+                {formatPercentage(performance.monthly)}
+              </p>
+              <p className="text-blue-200/70 text-sm font-semibold">Son 30 gün</p>
             </div>
-            <p className={`text-xl sm:text-2xl md:text-3xl font-bold ${getColorClass(performance.monthly)}`}>
-              {formatPercentage(performance.monthly)}
-            </p>
-            <p className="text-violet-200/60 text-xs sm:text-sm mt-1 sm:mt-2">Son 30 gün</p>
           </div>
         </div>
 
