@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Award, Lock } from 'lucide-react';
 import * as Icons from 'lucide-react';
 import { getAchievementProgress } from '../services/achievementService';
@@ -18,13 +18,17 @@ interface AchievementBadgesProps {
 export function AchievementBadges({ stats }: AchievementBadgesProps) {
   const [progress, setProgress] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const previousStatsRef = useRef<string>('');
 
   useEffect(() => {
-    loadProgress();
+    const statsString = JSON.stringify(stats);
+    if (statsString !== previousStatsRef.current) {
+      previousStatsRef.current = statsString;
+      loadProgress();
+    }
   }, [stats]);
 
   async function loadProgress() {
-    setLoading(true);
     const data = await getAchievementProgress(stats);
     setProgress(data);
     setLoading(false);
@@ -34,20 +38,20 @@ export function AchievementBadges({ stats }: AchievementBadgesProps) {
 
   if (loading) {
     return (
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-        <h3 className="text-lg font-semibold text-slate-900 mb-4">Başarılar</h3>
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-slate-200 dark:border-gray-700">
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-gray-100 mb-4">Başarılar</h3>
         <div className="flex items-center justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-700"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-700 dark:border-gray-300"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-slate-200 dark:border-gray-700">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-slate-900">Başarılar</h3>
-        <div className="flex items-center gap-2 text-sm text-slate-600">
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-gray-100">Başarılar</h3>
+        <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-gray-400">
           <Award size={18} />
           <span className="font-semibold">
             {unlockedCount}/{progress.length}
