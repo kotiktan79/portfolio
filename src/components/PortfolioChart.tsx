@@ -27,15 +27,20 @@ export function PortfolioChart({ data, type = 'area' }: PortfolioChartProps) {
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
+      const valueData = payload.find((p: any) => p.dataKey === 'value');
+      const investmentData = payload.find((p: any) => p.dataKey === 'investment');
+
+      if (!valueData || !investmentData) return null;
+
       return (
         <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg border border-slate-200 dark:border-gray-700">
           <p className="text-sm font-semibold text-slate-700 dark:text-gray-200 mb-2">{payload[0].payload.date}</p>
           <div className="space-y-1">
             <p className="text-sm text-slate-600 dark:text-gray-400">
-              Değer: <span className="font-bold text-slate-900 dark:text-gray-100">{payload[0].value.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺</span>
+              Değer: <span className="font-bold text-slate-900 dark:text-gray-100">{valueData.value.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺</span>
             </p>
             <p className="text-sm text-slate-600 dark:text-gray-400">
-              Yatırım: <span className="font-bold text-slate-900 dark:text-gray-100">{payload[1].value.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺</span>
+              Yatırım: <span className="font-bold text-slate-900 dark:text-gray-100">{investmentData.value.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} ₺</span>
             </p>
             <p className="text-sm text-slate-600 dark:text-gray-400">
               PnL: <span className={`font-bold ${payload[2].value >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
