@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, TrendingUp, RefreshCw, Target, Moon, Sun, Bell, BarChart3, Wifi, WifiOff, Activity, Download, Tv } from 'lucide-react';
+import { Plus, TrendingUp, RefreshCw, Target, Moon, Sun, Bell, BarChart3, Wifi, WifiOff, Activity, Download, Tv, DollarSign } from 'lucide-react';
 import { supabase, Holding, AssetType } from './lib/supabase';
 import { AddHoldingModal } from './components/AddHoldingModal';
 import { EditHoldingModal } from './components/EditHoldingModal';
