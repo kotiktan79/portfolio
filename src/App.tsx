@@ -1,0 +1,745 @@
+import { useEffect, useState } from 'react';
+import { Plus, TrendingUp, RefreshCw, Target, Moon, Sun, Bell, BarChart3, Wifi, WifiOff, Activity, Download } from 'lucide-react';
+import { supabase, Holding, AssetType } from './lib/supabase';
+import { AddHoldingModal } from './components/AddHoldingModal';
+import { EditHoldingModal } from './components/EditHoldingModal';
+import { HoldingRow } from './components/HoldingRow';
+import { PnLCard } from './components/PnLCard';
+import { RebalanceModal } from './components/RebalanceModal';
+import { PortfolioChart } from './components/PortfolioChart';
+import { AllocationChart } from './components/AllocationChart';
+import { TransactionHistory } from './components/TransactionHistory';
+import { AchievementBadges } from './components/AchievementBadges';
+import { PriceAlertModal } from './components/PriceAlertModal';
+import { RiskMetrics } from './components/RiskMetrics';
+import { ScenarioAnalysis } from './components/ScenarioAnalysis';
+import { ProfitSummary } from './components/ProfitSummary';
+import { WithdrawalCalculator } from './components/WithdrawalCalculator';
+import { ExportImportModal } from './components/ExportImportModal';
+import { HoldingsFilter } from './components/HoldingsFilter';
+import { ToastContainer } from './components/Toast';
+import { useToast } from './hooks/useToast';
+import { useDarkMode } from './hooks/useDarkMode';
+import {
+  fetchMultiplePrices,
+  formatCurrency,
+  initializeWebSocketConnection,
+  closeWebSocketConnection,
+  subscribeToConnectionStatus,
+  subscribeToPriceUpdates,
+  ConnectionStatus,
+  PriceUpdate
+} from './services/priceService';
+import {
+  getPnLData,
+  savePortfolioSnapshot,
+  calculateRebalance,
+  getDefaultTargetAllocations,
+  getHistoricalSnapshots,
+  PnLData,
+} from './services/analyticsService';
+import { checkAndUnlockAchievements } from './services/achievementService';
+import { getAllTransactions, getTotalDividends } from './services/transactionService';
+import { requestNotificationPermission, notifyAchievementUnlocked, getNotificationPermissionStatus } from './services/notificationService';
+
+function App() {
+  const [holdings, setHoldings] = useState<Holding[]>([]);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editingHolding, setEditingHolding] = useState<Holding | null>(null);
+  const [showRebalanceModal, setShowRebalanceModal] = useState(false);
+  const [showAlertModal, setShowAlertModal] = useState(false);
+  const [showExportImportModal, setShowExportImportModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedAssetType, setSelectedAssetType] = useState<AssetType | 'all'>('all');
+  const [sortBy, setSortBy] = useState<'name' | 'value' | 'pnl' | 'pnl_percent'>('value');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const toast = useToast();
+  const [showCharts, setShowCharts] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [pnlData, setPnlData] = useState<{
+    daily: PnLData;
+    weekly: PnLData;
+    monthly: PnLData;
+  } | null>(null);
+  const [livePnlData, setLivePnlData] = useState<{
+    daily: PnLData;
+    weekly: PnLData;
+    monthly: PnLData;
+  } | null>(null);
+  const [historicalData, setHistoricalData] = useState<any[]>([]);
+  const [targetAllocations, setTargetAllocations] = useState(getDefaultTargetAllocations());
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('disconnected');
+  const [lastUpdate, setLastUpdate] = useState<string>('');
+  const { isDark, toggle: toggleDarkMode } = useDarkMode();
+
+  useEffect(() => {
+    loadHoldings();
+    loadPnLData();
+    loadHistoricalData();
+    checkNotificationPermission();
+
+    const unsubscribeStatus = subscribeToConnectionStatus((status) => {
+      setConnectionStatus(status);
+    });
+
+    const unsubscribePrices = subscribeToPriceUpdates((update: PriceUpdate) => {
+      setLastUpdate(`${update.symbol}: ${formatCurrency(update.price)} ₺ (${update.source})`);
+
+      setHoldings(prev =>
+        prev.map(h =>
+          h.symbol === update.symbol
+            ? { ...h, current_price: update.price, updated_at: new Date().toISOString() }
+            : h
+        )
+      );
+    });
+
+    return () => {
+      unsubscribeStatus();
+      unsubscribePrices();
+      closeWebSocketConnection();
+    };
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      updatePrices();
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [holdings]);
+
+  useEffect(() => {
+    if (holdings.length > 0) {
+      calculateAndUpdatePnL();
+      calculateLivePnL();
+    }
+  }, [holdings]);
+
+  function calculateLivePnL() {
+    if (holdings.length === 0 || !pnlData) {
+      setLivePnlData(null);
+      return;
+    }
+
+    const currentTotalValue = holdings.reduce(
+      (sum, h) => sum + h.current_price * h.quantity,
+      0
+    );
+
+    const dailyBase = pnlData.daily.value - pnlData.daily.change;
+    const weeklyBase = pnlData.weekly.value - pnlData.weekly.change;
+    const monthlyBase = pnlData.monthly.value - pnlData.monthly.change;
+
+    const dailyChange = currentTotalValue - dailyBase;
+    const weeklyChange = currentTotalValue - weeklyBase;
+    const monthlyChange = currentTotalValue - monthlyBase;
+
+    setLivePnlData({
+      daily: {
+        period: 'Günlük',
+        value: currentTotalValue,
+        change: dailyChange,
+        percentage: dailyBase > 0 ? (dailyChange / dailyBase) * 100 : 0,
+      },
+      weekly: {
+        period: 'Haftalık',
+        value: currentTotalValue,
+        change: weeklyChange,
+        percentage: weeklyBase > 0 ? (weeklyChange / weeklyBase) * 100 : 0,
+      },
+      monthly: {
+        period: 'Aylık',
+        value: currentTotalValue,
+        change: monthlyChange,
+        percentage: monthlyBase > 0 ? (monthlyChange / monthlyBase) * 100 : 0,
+      },
+    });
+  }
+
+  async function loadHoldings() {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('holdings')
+      .select('*')
+      .order('symbol', { ascending: true });
+
+    if (error) {
+      console.error('Error loading holdings:', error);
+    } else {
+      setHoldings(data || []);
+      if (data && data.length > 0) {
+        updatePricesForHoldings(data);
+
+        const cryptoSymbols = data
+          .filter(h => h.asset_type === 'crypto')
+          .map(h => h.symbol);
+
+        if (cryptoSymbols.length > 0) {
+          initializeWebSocketConnection(cryptoSymbols);
+        }
+      }
+    }
+    setLoading(false);
+  }
+
+  async function updatePrices() {
+    if (holdings.length === 0) return;
+    await updatePricesForHoldings(holdings);
+  }
+
+  async function updatePricesForHoldings(holdingsToUpdate: Holding[]) {
+    const symbols = holdingsToUpdate.map(h => ({
+      symbol: h.symbol,
+      assetType: h.asset_type,
+    }));
+
+    const prices = await fetchMultiplePrices(symbols);
+
+    const updates = holdingsToUpdate.map(async (holding) => {
+      const newPrice = prices[holding.symbol];
+      if (newPrice && Math.abs(newPrice - holding.current_price) > 0.01) {
+        await supabase
+          .from('holdings')
+          .update({ current_price: newPrice, updated_at: new Date().toISOString() })
+          .eq('id', holding.id);
+
+        return { ...holding, current_price: newPrice };
+      }
+      return holding;
+    });
+
+    const updatedHoldings = await Promise.all(updates);
+    setHoldings(updatedHoldings);
+
+    await calculateAndUpdatePnL(updatedHoldings);
+  }
+
+  async function calculateAndUpdatePnL(currentHoldings = holdings) {
+    if (currentHoldings.length === 0) return;
+
+    const totalValue = currentHoldings.reduce(
+      (sum, h) => sum + h.current_price * h.quantity,
+      0
+    );
+    const totalInv = currentHoldings.reduce(
+      (sum, h) => sum + h.purchase_price * h.quantity,
+      0
+    );
+    const pnl = totalValue - totalInv;
+    const pnlPercent = totalInv > 0 ? (pnl / totalInv) * 100 : 0;
+
+    await savePortfolioSnapshot(totalValue, totalInv, pnl, pnlPercent);
+    const data = await getPnLData();
+    setPnlData(data);
+  }
+
+  async function loadPnLData() {
+    const data = await getPnLData();
+    setPnlData(data);
+    setLivePnlData(data);
+  }
+
+  async function loadHistoricalData() {
+    const data = await getHistoricalSnapshots(30);
+    setHistoricalData(data);
+  }
+
+  async function checkNotificationPermission() {
+    const status = getNotificationPermissionStatus();
+    setNotificationsEnabled(status === 'granted');
+  }
+
+  async function enableNotifications() {
+    const granted = await requestNotificationPermission();
+    setNotificationsEnabled(granted);
+    if (granted) {
+      toast.success('Bildirimler etkinleştirildi! Fiyat alarmları için bildirim alacaksınız.');
+    } else {
+      toast.error('Bildirim izni reddedildi.');
+    }
+  }
+
+  async function checkAchievements() {
+    const assetTypes = [...new Set(holdings.map((h) => h.asset_type))];
+    const transactions = await getAllTransactions();
+    const totalDividends = await getTotalDividends();
+
+    const unlocked = await checkAndUnlockAchievements({
+      totalHoldings: holdings.length,
+      totalValue: totalCurrentValue,
+      totalPnL: totalProfitLoss,
+      assetTypes,
+      positiveDays: 0,
+      totalDividends,
+      totalTransactions: transactions.length,
+    });
+
+    if (unlocked && unlocked.length > 0 && notificationsEnabled) {
+      unlocked.forEach((achievement: any) => {
+        notifyAchievementUnlocked(achievement.title, achievement.description);
+      });
+    }
+  }
+
+  async function handleAddHolding(newHolding: {
+    symbol: string;
+    asset_type: AssetType;
+    purchase_price: number;
+    quantity: number;
+    current_price: number;
+  }) {
+    const { data, error } = await supabase
+      .from('holdings')
+      .insert([newHolding])
+      .select()
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error adding holding:', error);
+      toast.error('Varlık eklenirken hata oluştu!');
+    } else if (data) {
+      setHoldings([...holdings, data]);
+      toast.success(`${newHolding.symbol} başarıyla eklendi!`);
+    }
+  }
+
+  async function handleUpdateHolding(
+    id: string,
+    updates: {
+      symbol: string;
+      asset_type: AssetType;
+      purchase_price: number;
+      quantity: number;
+    }
+  ) {
+    const { error } = await supabase
+      .from('holdings')
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error updating holding:', error);
+      toast.error('Varlık güncellenirken hata oluştu!');
+    } else {
+      setHoldings(
+        holdings.map((h) =>
+          h.id === id ? { ...h, ...updates } : h
+        )
+      );
+      toast.success('Varlık başarıyla güncellendi!');
+    }
+  }
+
+  async function handleDeleteHolding(id: string) {
+    const confirmed = window.confirm('Bu varlığı silmek istediğinize emin misiniz?');
+    if (!confirmed) return;
+
+    const { error } = await supabase.from('holdings').delete().eq('id', id);
+
+    if (error) {
+      console.error('Error deleting holding:', error);
+      toast.error('Varlık silinirken hata oluştu!');
+    } else {
+      setHoldings(holdings.filter((h) => h.id !== id));
+      toast.success('Varlık başarıyla silindi!');
+    }
+  }
+
+  async function handleRefresh() {
+    setRefreshing(true);
+    await updatePrices();
+    await loadPnLData();
+    await loadHistoricalData();
+    await checkAchievements();
+    setTimeout(() => setRefreshing(false), 500);
+  }
+
+
+  const totalInvestment = holdings.reduce(
+    (sum, h) => sum + h.purchase_price * h.quantity,
+    0
+  );
+
+  const totalCurrentValue = holdings.reduce(
+    (sum, h) => sum + h.current_price * h.quantity,
+    0
+  );
+
+  const totalProfitLoss = totalCurrentValue - totalInvestment;
+  const totalProfitLossPercent = totalInvestment > 0
+    ? (totalProfitLoss / totalInvestment) * 100
+    : 0;
+
+  const usdRate = holdings.find(h => h.symbol === 'USD')?.current_price || 41.96;
+  const totalInvestmentUSD = totalInvestment / usdRate;
+  const totalCurrentValueUSD = totalCurrentValue / usdRate;
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-900 dark:to-gray-800">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden">
+          <div className="bg-gradient-to-r from-slate-800 to-slate-700 px-4 md:px-8 py-4 md:py-6">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-white bg-opacity-10 rounded-xl backdrop-blur-sm">
+                  <TrendingUp className="text-white" size={28} />
+                </div>
+                <div>
+                  <h1 className="text-2xl md:text-3xl font-bold text-white">Portföy Takip</h1>
+                  <p className="text-slate-300 text-xs md:text-sm mt-1">Canlı fiyat güncellemeleri</p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2 w-full md:w-auto">
+                <div className="flex items-center gap-2 px-3 py-2 bg-white bg-opacity-10 rounded-lg backdrop-blur-sm">
+                  {connectionStatus === 'connected' ? (
+                    <>
+                      <Activity className="text-green-400 animate-pulse" size={18} />
+                      <span className="text-white text-sm font-medium">Canlı</span>
+                    </>
+                  ) : connectionStatus === 'connecting' ? (
+                    <>
+                      <Wifi className="text-yellow-400 animate-pulse" size={18} />
+                      <span className="text-white text-sm">Bağlanıyor...</span>
+                    </>
+                  ) : connectionStatus === 'error' ? (
+                    <>
+                      <WifiOff className="text-red-400" size={18} />
+                      <span className="text-white text-sm">Hata</span>
+                    </>
+                  ) : (
+                    <>
+                      <WifiOff className="text-gray-400" size={18} />
+                      <span className="text-white text-sm">Bağlantı Yok</span>
+                    </>
+                  )}
+                </div>
+                <button
+                  onClick={toggleDarkMode}
+                  className="flex items-center gap-2 px-3 py-2 bg-white bg-opacity-10 hover:bg-opacity-20 text-white rounded-lg transition-all backdrop-blur-sm"
+                >
+                  {isDark ? <Sun size={18} /> : <Moon size={18} />}
+                </button>
+                <button
+                  onClick={() => setShowCharts(!showCharts)}
+                  className="flex items-center gap-2 px-3 py-2 bg-white bg-opacity-10 hover:bg-opacity-20 text-white rounded-lg transition-all backdrop-blur-sm"
+                >
+                  <BarChart3 size={18} />
+                </button>
+                <button
+                  onClick={() => setShowAlertModal(true)}
+                  className="flex items-center gap-2 px-3 py-2 bg-white bg-opacity-10 hover:bg-opacity-20 text-white rounded-lg transition-all backdrop-blur-sm"
+                >
+                  <Bell size={18} />
+                </button>
+                {!notificationsEnabled && (
+                  <button
+                    onClick={enableNotifications}
+                    className="flex items-center gap-2 px-3 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-all font-medium"
+                    title="Bildirimleri Etkinleştir"
+                  >
+                    <Bell size={18} />
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowExportImportModal(true)}
+                  className="flex items-center gap-2 px-3 py-2 bg-white bg-opacity-10 hover:bg-opacity-20 text-white rounded-lg transition-all backdrop-blur-sm"
+                >
+                  <Download size={18} />
+                </button>
+                <button
+                  onClick={handleRefresh}
+                  disabled={refreshing}
+                  className="flex items-center gap-2 px-3 md:px-4 py-2 bg-white bg-opacity-10 hover:bg-opacity-20 text-white rounded-lg transition-all backdrop-blur-sm disabled:opacity-50"
+                >
+                  <RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />
+                  <span className="font-medium hidden sm:inline">Yenile</span>
+                </button>
+                <button
+                  onClick={() => setShowRebalanceModal(true)}
+                  className="flex items-center gap-2 px-3 md:px-4 py-2 bg-white bg-opacity-10 hover:bg-opacity-20 text-white rounded-lg transition-all backdrop-blur-sm"
+                >
+                  <Target size={18} />
+                  <span className="font-medium hidden sm:inline">Rebalance</span>
+                </button>
+                <button
+                  onClick={() => setShowAddModal(true)}
+                  className="flex items-center gap-2 px-4 md:px-6 py-2 bg-white text-slate-800 rounded-lg hover:bg-slate-50 transition-colors font-medium shadow-lg"
+                >
+                  <Plus size={20} />
+                  <span className="hidden sm:inline">Varlık Ekle</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-4 md:p-8 bg-slate-50 dark:bg-gray-900 border-b border-slate-200 dark:border-gray-700 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+              <div className="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl shadow-sm border border-slate-200 dark:border-gray-700">
+                <p className="text-sm font-medium text-slate-600 dark:text-gray-400 mb-2">Toplam Yatırım</p>
+                <p className="text-xl md:text-2xl font-bold text-slate-900 dark:text-gray-100">
+                  {formatCurrency(totalInvestment)} ₺
+                </p>
+                <p className="text-sm text-slate-500 dark:text-gray-500 mt-1">
+                  ${formatCurrency(totalInvestmentUSD)}
+                </p>
+              </div>
+              <div className="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl shadow-sm border border-slate-200 dark:border-gray-700">
+                <p className="text-sm font-medium text-slate-600 dark:text-gray-400 mb-2">Güncel Değer</p>
+                <p className="text-xl md:text-2xl font-bold text-slate-900 dark:text-gray-100">
+                  {formatCurrency(totalCurrentValue)} ₺
+                </p>
+                <p className="text-sm text-slate-500 dark:text-gray-500 mt-1">
+                  ${formatCurrency(totalCurrentValueUSD)}
+                </p>
+              </div>
+            </div>
+
+            <ProfitSummary
+              unrealizedProfit={totalProfitLoss}
+              unrealizedProfitPercent={totalProfitLossPercent}
+            />
+
+
+            {livePnlData && (
+              <div>
+                <h3 className="text-lg font-semibold text-slate-700 dark:text-gray-300 mb-3">Periyodik PnL</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <PnLCard data={livePnlData.daily} />
+                  <PnLCard data={livePnlData.weekly} />
+                  <PnLCard data={livePnlData.monthly} />
+                </div>
+              </div>
+            )}
+
+            {showCharts && holdings.length > 0 && (
+              <>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 className="text-lg font-semibold text-slate-900 mb-4">Portföy Performansı</h3>
+                    <div className="h-80">
+                      {historicalData.length > 0 ? (
+                        <PortfolioChart data={historicalData} type="area" />
+                      ) : (
+                        <div className="flex items-center justify-center h-full text-slate-500">
+                          <p>Henüz geçmiş veri yok. Lütfen bekleyin...</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 className="text-lg font-semibold text-slate-900 mb-4">Varlık Dağılımı</h3>
+                    <div className="h-80">
+                      <AllocationChart holdings={holdings} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <RiskMetrics />
+                  <ScenarioAnalysis holdings={holdings} currentValue={totalCurrentValue} />
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <TransactionHistory />
+                  <AchievementBadges
+                    stats={{
+                      totalHoldings: holdings.length,
+                      totalValue: totalCurrentValue,
+                      totalPnL: totalProfitLoss,
+                      assetTypes: [...new Set(holdings.map((h) => h.asset_type))],
+                      positiveDays: 0,
+                      totalDividends: 0,
+                      totalTransactions: 0,
+                    }}
+                  />
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className="overflow-x-auto">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-20">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-700 dark:border-gray-300"></div>
+                <p className="mt-4 text-slate-600 dark:text-gray-400">Yükleniyor...</p>
+              </div>
+            ) : holdings.length === 0 ? (
+              <div className="text-center py-20 px-4">
+                <TrendingUp className="mx-auto text-slate-300 dark:text-gray-600 mb-4" size={64} />
+                <h3 className="text-xl font-semibold text-slate-700 dark:text-gray-300 mb-2">
+                  Henüz varlık eklemediniz
+                </h3>
+                <p className="text-slate-500 dark:text-gray-500 mb-6">
+                  Portföyünüzü takip etmeye başlamak için ilk varlığınızı ekleyin
+                </p>
+                <button
+                  onClick={() => setShowAddModal(true)}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-slate-800 dark:bg-gray-700 text-white rounded-lg hover:bg-slate-700 dark:hover:bg-gray-600 transition-colors font-medium"
+                >
+                  <Plus size={20} />
+                  İlk Varlığı Ekle
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="px-4 md:px-8 pt-6">
+                  <HoldingsFilter
+                    searchQuery={searchQuery}
+                    onSearchChange={setSearchQuery}
+                    selectedType={selectedAssetType}
+                    onTypeChange={setSelectedAssetType}
+                    sortBy={sortBy}
+                    onSortChange={setSortBy}
+                    sortOrder={sortOrder}
+                    onSortOrderChange={setSortOrder}
+                  />
+                </div>
+                <table className="w-full">
+                <thead className="bg-slate-50 dark:bg-gray-900 border-b border-slate-200 dark:border-gray-700">
+                  <tr>
+                    <th className="px-3 md:px-6 py-3 md:py-4 text-left text-xs md:text-sm font-semibold text-slate-700 dark:text-gray-300">
+                      Varlık
+                    </th>
+                    <th className="px-3 md:px-6 py-3 md:py-4 text-right text-xs md:text-sm font-semibold text-slate-700 dark:text-gray-300 hidden sm:table-cell">
+                      Alış Fiyatı
+                    </th>
+                    <th className="px-3 md:px-6 py-3 md:py-4 text-right text-xs md:text-sm font-semibold text-slate-700 dark:text-gray-300 hidden md:table-cell">
+                      Miktar
+                    </th>
+                    <th className="px-3 md:px-6 py-3 md:py-4 text-right text-xs md:text-sm font-semibold text-slate-700 dark:text-gray-300">
+                      Güncel Fiyat
+                    </th>
+                    <th className="px-3 md:px-6 py-3 md:py-4 text-right text-xs md:text-sm font-semibold text-slate-700 dark:text-gray-300 hidden lg:table-cell">
+                      Toplam Değer
+                    </th>
+                    <th className="px-3 md:px-6 py-3 md:py-4 text-right text-xs md:text-sm font-semibold text-slate-700 dark:text-gray-300">
+                      Kar/Zarar
+                    </th>
+                    <th className="px-3 md:px-6 py-3 md:py-4 text-right text-xs md:text-sm font-semibold text-slate-700 dark:text-gray-300">
+                      İşlemler
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {holdings
+                    .filter((holding) => {
+                      const matchesSearch =
+                        searchQuery === '' ||
+                        holding.symbol.toLowerCase().includes(searchQuery.toLowerCase());
+                      const matchesType =
+                        selectedAssetType === 'all' || holding.asset_type === selectedAssetType;
+                      return matchesSearch && matchesType;
+                    })
+                    .sort((a, b) => {
+                      const aValue = a.current_price * a.quantity;
+                      const bValue = b.current_price * b.quantity;
+                      const aPnl = aValue - a.purchase_price * a.quantity;
+                      const bPnl = bValue - b.purchase_price * b.quantity;
+                      const aPnlPercent = ((aPnl / (a.purchase_price * a.quantity)) * 100);
+                      const bPnlPercent = ((bPnl / (b.purchase_price * b.quantity)) * 100);
+
+                      let comparison = 0;
+                      if (sortBy === 'name') {
+                        comparison = a.symbol.localeCompare(b.symbol);
+                      } else if (sortBy === 'value') {
+                        comparison = aValue - bValue;
+                      } else if (sortBy === 'pnl') {
+                        comparison = aPnl - bPnl;
+                      } else if (sortBy === 'pnl_percent') {
+                        comparison = aPnlPercent - bPnlPercent;
+                      }
+
+                      return sortOrder === 'asc' ? comparison : -comparison;
+                    })
+                    .map((holding) => (
+                      <HoldingRow
+                        key={holding.id}
+                        holding={holding}
+                        onEdit={setEditingHolding}
+                        onDelete={handleDeleteHolding}
+                        onTransactionComplete={handleRefresh}
+                      />
+                    ))}
+                </tbody>
+              </table>
+              </>
+            )}
+          </div>
+        </div>
+
+        {holdings.length > 0 && (
+          <div className="mt-8">
+            <WithdrawalCalculator holdings={holdings} />
+          </div>
+        )}
+
+        <div className="mt-6 text-center text-sm text-slate-600 space-y-1">
+          <p>Fiyatlar her 5 saniyede bir otomatik olarak güncellenir</p>
+          {lastUpdate && (
+            <p className="text-xs text-slate-500">
+              Son Güncelleme: {lastUpdate}
+            </p>
+          )}
+          <div className="flex items-center justify-center gap-4 mt-2 text-xs">
+            <div className="flex items-center gap-1">
+              <Activity className="text-green-500" size={14} />
+              <span>WebSocket (Gerçek Zamanlı)</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <RefreshCw className="text-blue-500" size={14} />
+              <span>REST API (5 sn)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {showAddModal && (
+        <AddHoldingModal
+          onClose={() => setShowAddModal(false)}
+          onAdd={handleAddHolding}
+        />
+      )}
+
+      {editingHolding && (
+        <EditHoldingModal
+          holding={editingHolding}
+          onClose={() => setEditingHolding(null)}
+          onUpdate={handleUpdateHolding}
+        />
+      )}
+
+      {showRebalanceModal && (
+        <RebalanceModal
+          allocations={calculateRebalance(holdings, targetAllocations)}
+          onClose={() => setShowRebalanceModal(false)}
+          onUpdateTargets={(targets) => setTargetAllocations(targets)}
+        />
+      )}
+
+      {showExportImportModal && (
+        <ExportImportModal
+          isOpen={showExportImportModal}
+          onClose={() => setShowExportImportModal(false)}
+          onImportComplete={handleRefresh}
+        />
+      )}
+
+      {showAlertModal && (
+        <PriceAlertModal
+          onClose={() => setShowAlertModal(false)}
+          onAdd={() => {
+            setShowAlertModal(false);
+            handleRefresh();
+          }}
+        />
+      )}
+
+      <ToastContainer toasts={toast.toasts} onClose={toast.removeToast} />
+    </div>
+  );
+}
+
+export default App;
