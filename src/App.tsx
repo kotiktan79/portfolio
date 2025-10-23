@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, TrendingUp, RefreshCw, Target, Moon, Sun, Bell, BarChart3, Wifi, WifiOff, Activity, Download } from 'lucide-react';
+import { Plus, TrendingUp, RefreshCw, Target, Moon, Sun, Bell, BarChart3, Wifi, WifiOff, Activity, Download, Tv } from 'lucide-react';
 import { supabase, Holding, AssetType } from './lib/supabase';
 import { AddHoldingModal } from './components/AddHoldingModal';
 import { EditHoldingModal } from './components/EditHoldingModal';
@@ -398,6 +398,16 @@ function App() {
                 </div>
               </div>
               <div className="flex flex-wrap gap-2 w-full md:w-auto relative z-10">
+                <a
+                  href="/dashboard.html"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg transition-all shadow-lg hover:shadow-xl hover:scale-105 font-medium"
+                  title="Canlı Dashboard'u Yeni Sekmede Aç"
+                >
+                  <Tv size={18} />
+                  <span className="hidden sm:inline">Dashboard</span>
+                </a>
                 <div className="flex items-center gap-2 px-3 py-2 bg-white bg-opacity-15 rounded-lg backdrop-blur-md shadow-md border border-white/20">
                   {connectionStatus === 'connected' ? (
                     <>
