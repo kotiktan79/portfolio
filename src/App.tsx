@@ -17,6 +17,7 @@ import { ProfitSummary } from './components/ProfitSummary';
 import { WithdrawalCalculator } from './components/WithdrawalCalculator';
 import { ExportImportModal } from './components/ExportImportModal';
 import { HoldingsFilter } from './components/HoldingsFilter';
+import { TradingSignals } from './components/TradingSignals';
 import { ToastContainer } from './components/Toast';
 import { useToast } from './hooks/useToast';
 import { useDarkMode } from './hooks/useDarkMode';
@@ -534,6 +535,8 @@ function App() {
 
             {showCharts && holdings.length > 0 && (
               <>
+                <TradingSignals holdings={holdings} />
+
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-slate-200 dark:border-gray-700 hover:shadow-xl transition-shadow">
                     <h3 className="text-lg font-bold text-slate-900 dark:text-gray-100 mb-4 flex items-center gap-2">
