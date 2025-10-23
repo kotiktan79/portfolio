@@ -155,15 +155,15 @@ export function LiveDashboard({
     <div className="fixed inset-0 bg-gradient-to-br from-gray-900 via-slate-900 to-gray-900 text-white overflow-auto">
       <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:50px_50px]"></div>
 
-      <div className="relative z-10 p-8">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-blue-500/20 rounded-2xl backdrop-blur-xl border border-blue-500/30">
-              <Activity className="text-blue-400 animate-pulse" size={32} />
+      <div className="relative z-10 h-full flex flex-col p-3 sm:p-4 md:p-6 lg:p-8">
+        <div className="flex items-center justify-between mb-3 sm:mb-4 md:mb-6">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="p-2 sm:p-3 bg-blue-500/20 rounded-xl sm:rounded-2xl backdrop-blur-xl border border-blue-500/30">
+              <Activity className="text-blue-400 animate-pulse" size={24} />
             </div>
             <div>
-              <h1 className="text-4xl font-bold tracking-tight">Canlı Portföy İzleme</h1>
-              <p className="text-gray-400 text-lg mt-1">
+              <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight">Canlı Portföy İzleme</h1>
+              <p className="text-gray-400 text-xs sm:text-sm md:text-base lg:text-lg mt-1">
                 {time.toLocaleTimeString('tr-TR')} • {time.toLocaleDateString('tr-TR', {
                   weekday: 'long',
                   year: 'numeric',
@@ -175,98 +175,98 @@ export function LiveDashboard({
           </div>
           <button
             onClick={toggleFullscreen}
-            className="p-3 bg-gray-800/50 hover:bg-gray-700/50 rounded-xl transition-all border border-gray-700"
+            className="p-2 sm:p-3 bg-gray-800/50 hover:bg-gray-700/50 rounded-lg sm:rounded-xl transition-all border border-gray-700"
           >
-            <Maximize2 size={24} />
+            <Maximize2 size={20} className="sm:w-6 sm:h-6" />
           </button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
-          <div className="lg:col-span-2 bg-gradient-to-br from-blue-600/20 to-blue-800/20 backdrop-blur-xl rounded-3xl p-8 border border-blue-500/30 shadow-2xl">
-            <div className="flex items-center gap-3 mb-4">
-              <DollarSign className="text-blue-400" size={32} />
-              <p className="text-blue-200 text-xl font-semibold">Toplam Değer</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-3 sm:mb-4 md:mb-6">
+          <div className="sm:col-span-2 bg-gradient-to-br from-blue-600/20 to-blue-800/20 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 border border-blue-500/30 shadow-2xl">
+            <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3 md:mb-4">
+              <DollarSign className="text-blue-400" size={20} />
+              <p className="text-blue-200 text-sm sm:text-base md:text-lg lg:text-xl font-semibold">Toplam Değer</p>
             </div>
-            <p className="text-6xl font-bold mb-2">{formatCurrency(totalValue, 0)} ₺</p>
-            <div className="flex items-center gap-4 mt-4">
-              <div className="flex items-center gap-2">
+            <p className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-2">{formatCurrency(totalValue, 0)} ₺</p>
+            <div className="flex items-center gap-2 sm:gap-3 md:gap-4 mt-2 sm:mt-3 md:mt-4">
+              <div className="flex items-center gap-1 sm:gap-2">
                 {totalPnL >= 0 ? (
-                  <ArrowUp className="text-green-400" size={24} />
+                  <ArrowUp className="text-green-400" size={16} />
                 ) : (
-                  <ArrowDown className="text-red-400" size={24} />
+                  <ArrowDown className="text-red-400" size={16} />
                 )}
-                <span className={`text-3xl font-bold ${getColorClass(totalPnL)}`}>
+                <span className={`text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold ${getColorClass(totalPnL)}`}>
                   {formatCurrency(Math.abs(totalPnL), 0)} ₺
                 </span>
               </div>
-              <span className={`text-2xl font-bold ${getColorClass(totalPnL)}`}>
+              <span className={`text-base sm:text-lg md:text-xl lg:text-2xl font-bold ${getColorClass(totalPnL)}`}>
                 {formatPercentage(totalPnLPercent)}
               </span>
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-purple-600/20 to-purple-800/20 backdrop-blur-xl rounded-3xl p-8 border border-purple-500/30 shadow-2xl">
-            <p className="text-purple-200 text-lg font-semibold mb-2">Yatırım</p>
-            <p className="text-4xl font-bold">{formatCurrency(totalInvestment, 0)} ₺</p>
+          <div className="bg-gradient-to-br from-purple-600/20 to-purple-800/20 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 border border-purple-500/30 shadow-2xl">
+            <p className="text-purple-200 text-xs sm:text-sm md:text-base lg:text-lg font-semibold mb-1 sm:mb-2">Yatırım</p>
+            <p className="text-2xl sm:text-3xl md:text-4xl font-bold">{formatCurrency(totalInvestment, 0)} ₺</p>
           </div>
 
-          <div className="bg-gradient-to-br from-teal-600/20 to-teal-800/20 backdrop-blur-xl rounded-3xl p-8 border border-teal-500/30 shadow-2xl">
-            <p className="text-teal-200 text-lg font-semibold mb-2">Toplam Varlık</p>
-            <p className="text-4xl font-bold">{holdings.length}</p>
+          <div className="bg-gradient-to-br from-teal-600/20 to-teal-800/20 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 border border-teal-500/30 shadow-2xl">
+            <p className="text-teal-200 text-xs sm:text-sm md:text-base lg:text-lg font-semibold mb-1 sm:mb-2">Toplam Varlık</p>
+            <p className="text-2xl sm:text-3xl md:text-4xl font-bold">{holdings.length}</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-gradient-to-br from-emerald-600/20 to-emerald-800/20 backdrop-blur-xl rounded-2xl p-6 border border-emerald-500/30 shadow-xl">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Zap className="text-emerald-400" size={20} />
-                <p className="text-emerald-200 font-semibold">Günlük</p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 md:gap-6 mb-3 sm:mb-4 md:mb-6">
+          <div className="bg-gradient-to-br from-emerald-600/20 to-emerald-800/20 backdrop-blur-xl rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 border border-emerald-500/30 shadow-xl">
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
+              <div className="flex items-center gap-1 sm:gap-2">
+                <Zap className="text-emerald-400" size={16} />
+                <p className="text-emerald-200 text-xs sm:text-sm md:text-base font-semibold">Günlük</p>
               </div>
-              {performance.daily >= 0 ? <ArrowUp className="text-emerald-400" size={20} /> : <ArrowDown className="text-red-400" size={20} />}
+              {performance.daily >= 0 ? <ArrowUp className="text-emerald-400" size={16} /> : <ArrowDown className="text-red-400" size={16} />}
             </div>
-            <p className={`text-3xl font-bold ${getColorClass(performance.daily)}`}>
+            <p className={`text-xl sm:text-2xl md:text-3xl font-bold ${getColorClass(performance.daily)}`}>
               {formatPercentage(performance.daily)}
             </p>
-            <p className="text-emerald-200/60 text-sm mt-2">Son 24 saat</p>
+            <p className="text-emerald-200/60 text-xs sm:text-sm mt-1 sm:mt-2">Son 24 saat</p>
           </div>
 
-          <div className="bg-gradient-to-br from-cyan-600/20 to-cyan-800/20 backdrop-blur-xl rounded-2xl p-6 border border-cyan-500/30 shadow-xl">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="text-cyan-400" size={20} />
-                <p className="text-cyan-200 font-semibold">Haftalık</p>
+          <div className="bg-gradient-to-br from-cyan-600/20 to-cyan-800/20 backdrop-blur-xl rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 border border-cyan-500/30 shadow-xl">
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
+              <div className="flex items-center gap-1 sm:gap-2">
+                <TrendingUp className="text-cyan-400" size={16} />
+                <p className="text-cyan-200 text-xs sm:text-sm md:text-base font-semibold">Haftalık</p>
               </div>
-              {performance.weekly >= 0 ? <ArrowUp className="text-cyan-400" size={20} /> : <ArrowDown className="text-red-400" size={20} />}
+              {performance.weekly >= 0 ? <ArrowUp className="text-cyan-400" size={16} /> : <ArrowDown className="text-red-400" size={16} />}
             </div>
-            <p className={`text-3xl font-bold ${getColorClass(performance.weekly)}`}>
+            <p className={`text-xl sm:text-2xl md:text-3xl font-bold ${getColorClass(performance.weekly)}`}>
               {formatPercentage(performance.weekly)}
             </p>
-            <p className="text-cyan-200/60 text-sm mt-2">Son 7 gün</p>
+            <p className="text-cyan-200/60 text-xs sm:text-sm mt-1 sm:mt-2">Son 7 gün</p>
           </div>
 
-          <div className="bg-gradient-to-br from-violet-600/20 to-violet-800/20 backdrop-blur-xl rounded-2xl p-6 border border-violet-500/30 shadow-xl">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Target className="text-violet-400" size={20} />
-                <p className="text-violet-200 font-semibold">Aylık</p>
+          <div className="bg-gradient-to-br from-violet-600/20 to-violet-800/20 backdrop-blur-xl rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 border border-violet-500/30 shadow-xl">
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
+              <div className="flex items-center gap-1 sm:gap-2">
+                <Target className="text-violet-400" size={16} />
+                <p className="text-violet-200 text-xs sm:text-sm md:text-base font-semibold">Aylık</p>
               </div>
-              {performance.monthly >= 0 ? <ArrowUp className="text-violet-400" size={20} /> : <ArrowDown className="text-red-400" size={20} />}
+              {performance.monthly >= 0 ? <ArrowUp className="text-violet-400" size={16} /> : <ArrowDown className="text-red-400" size={16} />}
             </div>
-            <p className={`text-3xl font-bold ${getColorClass(performance.monthly)}`}>
+            <p className={`text-xl sm:text-2xl md:text-3xl font-bold ${getColorClass(performance.monthly)}`}>
               {formatPercentage(performance.monthly)}
             </p>
-            <p className="text-violet-200/60 text-sm mt-2">Son 30 gün</p>
+            <p className="text-violet-200/60 text-xs sm:text-sm mt-1 sm:mt-2">Son 30 gün</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          <div className="bg-gray-800/40 backdrop-blur-xl rounded-2xl p-6 border border-gray-700/50 shadow-xl">
-            <div className="flex items-center gap-3 mb-4">
-              <PieChart className="text-orange-400" size={24} />
-              <h3 className="text-xl font-bold">Varlık Dağılımı</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6 mb-3 sm:mb-4 md:mb-6">
+          <div className="bg-gray-800/40 backdrop-blur-xl rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 border border-gray-700/50 shadow-xl">
+            <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+              <PieChart className="text-orange-400" size={18} />
+              <h3 className="text-base sm:text-lg md:text-xl font-bold">Varlık Dağılımı</h3>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {assetTypes.map((asset) => {
                 const getTypeColor = (type: string) => {
                   switch (type) {
@@ -290,16 +290,16 @@ export function LiveDashboard({
 
                 return (
                   <div key={asset.type}>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-3 h-3 rounded-full ${getTypeColor(asset.type)}`}></div>
-                        <span className="text-gray-300 font-semibold">{getTypeName(asset.type)}</span>
+                    <div className="flex items-center justify-between mb-1 sm:mb-2">
+                      <div className="flex items-center gap-1 sm:gap-2">
+                        <div className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full ${getTypeColor(asset.type)}`}></div>
+                        <span className="text-gray-300 text-xs sm:text-sm font-semibold">{getTypeName(asset.type)}</span>
                       </div>
-                      <span className="text-white font-bold">{asset.percentage.toFixed(1)}%</span>
+                      <span className="text-white text-xs sm:text-sm font-bold">{asset.percentage.toFixed(1)}%</span>
                     </div>
-                    <div className="w-full bg-gray-700/30 rounded-full h-2">
+                    <div className="w-full bg-gray-700/30 rounded-full h-1.5 sm:h-2">
                       <div
-                        className={`h-2 rounded-full ${getTypeColor(asset.type)}`}
+                        className={`h-1.5 sm:h-2 rounded-full ${getTypeColor(asset.type)}`}
                         style={{ width: `${asset.percentage}%` }}
                       ></div>
                     </div>
@@ -315,28 +315,28 @@ export function LiveDashboard({
             </div>
           </div>
 
-          <div className="bg-gray-800/40 backdrop-blur-xl rounded-2xl p-6 border border-gray-700/50 shadow-xl">
-            <div className="flex items-center gap-3 mb-4">
-              <Activity className="text-blue-400" size={24} />
-              <h3 className="text-xl font-bold">Piyasa İstatistikleri</h3>
+          <div className="bg-gray-800/40 backdrop-blur-xl rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 border border-gray-700/50 shadow-xl">
+            <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+              <Activity className="text-blue-400" size={18} />
+              <h3 className="text-base sm:text-lg md:text-xl font-bold">Piyasa İstatistikleri</h3>
             </div>
-            <div className="space-y-4">
-              <div className="bg-gray-700/30 rounded-xl p-4">
-                <p className="text-gray-400 text-sm mb-1">Ortalama Getiri</p>
-                <p className={`text-2xl font-bold ${getColorClass(avgReturn)}`}>
+            <div className="space-y-2 sm:space-y-3 md:space-y-4">
+              <div className="bg-gray-700/30 rounded-lg sm:rounded-xl p-2 sm:p-3 md:p-4">
+                <p className="text-gray-400 text-xs sm:text-sm mb-1">Ortalama Getiri</p>
+                <p className={`text-lg sm:text-xl md:text-2xl font-bold ${getColorClass(avgReturn)}`}>
                   {formatPercentage(avgReturn)}
                 </p>
               </div>
-              <div className="bg-gray-700/30 rounded-xl p-4">
-                <p className="text-gray-400 text-sm mb-1">Volatil Varlıklar</p>
-                <p className="text-2xl font-bold text-yellow-400">
+              <div className="bg-gray-700/30 rounded-lg sm:rounded-xl p-2 sm:p-3 md:p-4">
+                <p className="text-gray-400 text-xs sm:text-sm mb-1">Volatil Varlıklar</p>
+                <p className="text-lg sm:text-xl md:text-2xl font-bold text-yellow-400">
                   {volatileAssets.length}
                 </p>
                 <p className="text-xs text-gray-400 mt-1">%10+ değişim</p>
               </div>
-              <div className="bg-gray-700/30 rounded-xl p-4">
-                <p className="text-gray-400 text-sm mb-1">Stabil Varlıklar</p>
-                <p className="text-2xl font-bold text-green-400">
+              <div className="bg-gray-700/30 rounded-lg sm:rounded-xl p-2 sm:p-3 md:p-4">
+                <p className="text-gray-400 text-xs sm:text-sm mb-1">Stabil Varlıklar</p>
+                <p className="text-lg sm:text-xl md:text-2xl font-bold text-green-400">
                   {stableAssets.length}
                 </p>
                 <p className="text-xs text-gray-400 mt-1">±%5 aralığında</p>
@@ -344,16 +344,16 @@ export function LiveDashboard({
             </div>
           </div>
 
-          <div className="bg-gray-800/40 backdrop-blur-xl rounded-2xl p-6 border border-gray-700/50 shadow-xl">
-            <div className="flex items-center gap-3 mb-4">
-              <AlertTriangle className="text-red-400" size={24} />
-              <h3 className="text-xl font-bold">Risk Göstergeleri</h3>
+          <div className="bg-gray-800/40 backdrop-blur-xl rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 border border-gray-700/50 shadow-xl">
+            <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+              <AlertTriangle className="text-red-400" size={18} />
+              <h3 className="text-base sm:text-lg md:text-xl font-bold">Risk Göstergeleri</h3>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {volatileAssets.length > 5 && (
-                <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
-                  <p className="text-red-400 font-semibold mb-1">Yüksek Volatilite</p>
-                  <p className="text-sm text-gray-300">{volatileAssets.length} varlık %10+ değişim gösteriyor</p>
+                <div className="bg-red-500/10 border border-red-500/30 rounded-lg sm:rounded-xl p-2 sm:p-3 md:p-4">
+                  <p className="text-red-400 text-xs sm:text-sm font-semibold mb-1">Yüksek Volatilite</p>
+                  <p className="text-xs sm:text-sm text-gray-300">{volatileAssets.length} varlık %10+ değişim gösteriyor</p>
                 </div>
               )}
               {totalPnLPercent < -10 && (
@@ -378,32 +378,32 @@ export function LiveDashboard({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          <div className="bg-gray-800/40 backdrop-blur-xl rounded-3xl p-6 border border-gray-700/50 shadow-2xl">
-            <div className="flex items-center gap-3 mb-6">
-              <TrendingUp className="text-green-400" size={28} />
-              <h2 className="text-2xl font-bold">En Çok Kazandıranlar</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6 lg:gap-8 mb-3 sm:mb-4 md:mb-6">
+          <div className="bg-gray-800/40 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-3 sm:p-4 md:p-6 border border-gray-700/50 shadow-2xl">
+            <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4 md:mb-6">
+              <TrendingUp className="text-green-400" size={20} />
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold">En Çok Kazandıranlar</h2>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-2 sm:space-y-3 md:space-y-4">
               {topGainers.map((holding, index) => (
                 <div
                   key={holding.id}
-                  className={`p-4 rounded-xl border-2 ${getBgColorClass(holding.pnlPercent)} transition-all`}
+                  className={`p-2 sm:p-3 md:p-4 rounded-lg sm:rounded-xl border-2 ${getBgColorClass(holding.pnlPercent)} transition-all`}
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-3">
-                      <span className="text-3xl font-bold text-gray-400">#{index + 1}</span>
-                      <span className="text-2xl font-bold">{holding.symbol}</span>
+                  <div className="flex items-center justify-between mb-1 sm:mb-2">
+                    <div className="flex items-center gap-1 sm:gap-2 md:gap-3">
+                      <span className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-400">#{index + 1}</span>
+                      <span className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold">{holding.symbol}</span>
                     </div>
-                    <span className="text-xl font-semibold text-green-400">
+                    <span className="text-sm sm:text-base md:text-lg lg:text-xl font-semibold text-green-400">
                       {formatPercentage(holding.pnlPercent)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-lg text-gray-400">
+                    <span className="text-xs sm:text-sm md:text-base lg:text-lg text-gray-400">
                       {formatCurrency(holding.current_price)} ₺
                     </span>
-                    <span className="text-xl font-bold text-green-400">
+                    <span className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-green-400">
                       +{formatCurrency(holding.pnl)} ₺
                     </span>
                   </div>
@@ -412,31 +412,31 @@ export function LiveDashboard({
             </div>
           </div>
 
-          <div className="bg-gray-800/40 backdrop-blur-xl rounded-3xl p-6 border border-gray-700/50 shadow-2xl">
-            <div className="flex items-center gap-3 mb-6">
-              <TrendingDown className="text-red-400" size={28} />
-              <h2 className="text-2xl font-bold">En Çok Kaybedenler</h2>
+          <div className="bg-gray-800/40 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-3 sm:p-4 md:p-6 border border-gray-700/50 shadow-2xl">
+            <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4 md:mb-6">
+              <TrendingDown className="text-red-400" size={20} />
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold">En Çok Kaybedenler</h2>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-2 sm:space-y-3 md:space-y-4">
               {topLosers.map((holding, index) => (
                 <div
                   key={holding.id}
-                  className={`p-4 rounded-xl border-2 ${getBgColorClass(holding.pnlPercent)} transition-all`}
+                  className={`p-2 sm:p-3 md:p-4 rounded-lg sm:rounded-xl border-2 ${getBgColorClass(holding.pnlPercent)} transition-all`}
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-3">
-                      <span className="text-3xl font-bold text-gray-400">#{index + 1}</span>
-                      <span className="text-2xl font-bold">{holding.symbol}</span>
+                  <div className="flex items-center justify-between mb-1 sm:mb-2">
+                    <div className="flex items-center gap-1 sm:gap-2 md:gap-3">
+                      <span className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-400">#{index + 1}</span>
+                      <span className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold">{holding.symbol}</span>
                     </div>
-                    <span className="text-xl font-semibold text-red-400">
+                    <span className="text-sm sm:text-base md:text-lg lg:text-xl font-semibold text-red-400">
                       {formatPercentage(holding.pnlPercent)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-lg text-gray-400">
+                    <span className="text-xs sm:text-sm md:text-base lg:text-lg text-gray-400">
                       {formatCurrency(holding.current_price)} ₺
                     </span>
-                    <span className="text-xl font-bold text-red-400">
+                    <span className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-red-400">
                       {formatCurrency(holding.pnl)} ₺
                     </span>
                   </div>
@@ -446,65 +446,65 @@ export function LiveDashboard({
           </div>
         </div>
 
-        <div className="bg-gray-800/40 backdrop-blur-xl rounded-3xl p-6 border border-gray-700/50 shadow-2xl mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold">Canlı Fiyat Hareketleri</h2>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-sm text-gray-400">Gerçek Zamanlı</span>
+        <div className="bg-gray-800/40 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-3 sm:p-4 md:p-6 border border-gray-700/50 shadow-2xl mb-3 sm:mb-4 md:mb-6">
+          <div className="flex items-center justify-between mb-3 sm:mb-4 md:mb-6">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-bold">Canlı Fiyat Hareketleri</h2>
+            <div className="flex items-center gap-1 sm:gap-2">
+              <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span className="text-xs sm:text-sm text-gray-400">Gerçek Zamanlı</span>
             </div>
           </div>
           <div className="overflow-hidden">
-            <div className="flex gap-4 animate-scroll">
+            <div className="flex gap-2 sm:gap-3 md:gap-4 animate-scroll">
               {[...holdingsWithPnL, ...holdingsWithPnL].map((holding, index) => (
                 <div
                   key={`${holding.id}-${index}`}
-                  className={`flex-shrink-0 w-64 rounded-xl border-2 p-4 ${getBgColorClass(holding.pnlPercent)}`}
+                  className={`flex-shrink-0 w-48 sm:w-56 md:w-64 rounded-lg sm:rounded-xl border-2 p-2 sm:p-3 md:p-4 ${getBgColorClass(holding.pnlPercent)}`}
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-lg font-bold">{holding.symbol}</span>
+                  <div className="flex items-center justify-between mb-1 sm:mb-2">
+                    <span className="text-sm sm:text-base md:text-lg font-bold">{holding.symbol}</span>
                     {holding.pnlPercent >= 0 ? (
-                      <ArrowUp className="text-green-400" size={20} />
+                      <ArrowUp className="text-green-400" size={16} />
                     ) : (
-                      <ArrowDown className="text-red-400" size={20} />
+                      <ArrowDown className="text-red-400" size={16} />
                     )}
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-2xl font-bold">{formatCurrency(holding.current_price)} ₺</span>
-                    <span className={`text-lg font-bold ${getColorClass(holding.pnlPercent)}`}>
+                    <span className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold">{formatCurrency(holding.current_price)} ₺</span>
+                    <span className={`text-sm sm:text-base md:text-lg font-bold ${getColorClass(holding.pnlPercent)}`}>
                       {formatPercentage(holding.pnlPercent)}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-400 mt-1 uppercase">{holding.asset_type}</p>
+                  <p className="text-[10px] sm:text-xs text-gray-400 mt-1 uppercase">{holding.asset_type}</p>
                 </div>
               ))}
             </div>
           </div>
         </div>
 
-        <div className="bg-gray-800/40 backdrop-blur-xl rounded-3xl p-6 border border-gray-700/50 shadow-2xl">
-          <h2 className="text-2xl font-bold mb-6">Tüm Varlıklar - Isı Haritası</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <div className="bg-gray-800/40 backdrop-blur-xl rounded-2xl sm:rounded-3xl p-3 sm:p-4 md:p-6 border border-gray-700/50 shadow-2xl">
+          <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4 md:mb-6">Tüm Varlıklar - Isı Haritası</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3 md:gap-4">
             {holdingsWithPnL.map((holding) => {
               const size = Math.max(Math.min(holding.weight * 2, 100), 40);
               return (
                 <div
                   key={holding.id}
-                  className={`relative rounded-2xl border-2 ${getBgColorClass(holding.pnlPercent)} transition-all hover:scale-105 cursor-pointer overflow-hidden`}
+                  className={`relative rounded-xl sm:rounded-2xl border-2 ${getBgColorClass(holding.pnlPercent)} transition-all hover:scale-105 cursor-pointer overflow-hidden`}
                   style={{
-                    height: `${size + 80}px`,
+                    height: `${Math.max(size + 60, 100)}px`,
                   }}
                 >
-                  <div className="absolute inset-0 p-4 flex flex-col justify-between">
+                  <div className="absolute inset-0 p-2 sm:p-3 md:p-4 flex flex-col justify-between">
                     <div>
-                      <p className="text-xl font-bold mb-1">{holding.symbol}</p>
-                      <p className="text-xs text-gray-400 uppercase">{holding.asset_type}</p>
+                      <p className="text-sm sm:text-base md:text-lg lg:text-xl font-bold mb-1">{holding.symbol}</p>
+                      <p className="text-[10px] sm:text-xs text-gray-400 uppercase">{holding.asset_type}</p>
                     </div>
                     <div>
-                      <p className={`text-2xl font-bold ${getColorClass(holding.pnlPercent)}`}>
+                      <p className={`text-base sm:text-lg md:text-xl lg:text-2xl font-bold ${getColorClass(holding.pnlPercent)}`}>
                         {formatPercentage(holding.pnlPercent)}
                       </p>
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-[10px] sm:text-xs text-gray-400 mt-1">
                         {formatCurrency(holding.value, 0)} ₺
                       </p>
                     </div>
@@ -515,14 +515,14 @@ export function LiveDashboard({
           </div>
         </div>
 
-        <div className="mt-8 bg-gray-800/20 backdrop-blur-xl rounded-2xl p-4 border border-gray-700/30">
-          <div className="flex items-center justify-center gap-8 text-sm text-gray-400">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+        <div className="mt-3 sm:mt-4 md:mt-6 lg:mt-8 bg-gray-800/20 backdrop-blur-xl rounded-xl sm:rounded-2xl p-2 sm:p-3 md:p-4 border border-gray-700/30">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 md:gap-8 text-xs sm:text-sm text-gray-400">
+            <div className="flex items-center gap-1 sm:gap-2">
+              <div className="w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full animate-pulse"></div>
               <span>Canlı Veri Akışı Aktif</span>
             </div>
-            <div className="flex items-center gap-2">
-              <Activity className="animate-pulse" size={16} />
+            <div className="flex items-center gap-1 sm:gap-2">
+              <Activity className="animate-pulse" size={14} />
               <span>Otomatik Güncelleme: 5 Saniye</span>
             </div>
           </div>
