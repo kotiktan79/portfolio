@@ -468,9 +468,13 @@ function App() {
                 </button>
                 <button
                   onClick={() => setShowCharts(!showCharts)}
-                  className="flex items-center gap-2 px-3 py-2 bg-white bg-opacity-15 hover:bg-opacity-25 text-white rounded-lg transition-all backdrop-blur-md shadow-md border border-white/20 hover:scale-105"
+                  className="flex items-center gap-2 px-3 md:px-4 py-2 bg-white bg-opacity-15 hover:bg-opacity-25 text-white rounded-lg transition-all backdrop-blur-md shadow-md border border-white/20 hover:scale-105"
+                  title={showCharts ? 'Grafikleri Gizle' : 'Grafikleri Göster'}
                 >
                   <BarChart3 size={18} />
+                  <span className="hidden sm:inline text-sm font-semibold">
+                    {showCharts ? 'Grafikleri Gizle' : 'Grafikleri Göster'}
+                  </span>
                 </button>
                 <button
                   onClick={() => setShowAlertModal(true)}
