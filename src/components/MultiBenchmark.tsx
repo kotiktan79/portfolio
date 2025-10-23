@@ -201,29 +201,31 @@ export function MultiBenchmark({ portfolioValue, initialValue }: MultiBenchmarkP
         </LineChart>
       </ResponsiveContainer>
 
-      <div className="mt-6 p-4 bg-slate-50 dark:bg-gray-900 rounded-lg border border-slate-200 dark:border-gray-700">
-        <h4 className="text-sm font-bold text-slate-700 dark:text-gray-300 mb-2">
-          📊 Performans Özeti
-        </h4>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <p className="text-xs text-slate-600 dark:text-gray-400 mb-1">En İyi Performans</p>
-            <p className="text-sm font-bold text-green-600">
-              {benchmarks.reduce((max, b) => (b.return > max.return ? b : max), benchmarks[0]).name}
-              {' '}
-              (+{benchmarks.reduce((max, b) => (b.return > max.return ? b : max), benchmarks[0]).return.toFixed(2)}%)
-            </p>
-          </div>
-          <div>
-            <p className="text-xs text-slate-600 dark:text-gray-400 mb-1">En Düşük Performans</p>
-            <p className="text-sm font-bold text-red-600">
-              {benchmarks.reduce((min, b) => (b.return < min.return ? b : min), benchmarks[0]).name}
-              {' '}
-              ({benchmarks.reduce((min, b) => (b.return < min.return ? b : min), benchmarks[0]).return.toFixed(2)}%)
-            </p>
+      {benchmarks.length > 0 && (
+        <div className="mt-6 p-4 bg-slate-50 dark:bg-gray-900 rounded-lg border border-slate-200 dark:border-gray-700">
+          <h4 className="text-sm font-bold text-slate-700 dark:text-gray-300 mb-2">
+            📊 Performans Özeti
+          </h4>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-xs text-slate-600 dark:text-gray-400 mb-1">En İyi Performans</p>
+              <p className="text-sm font-bold text-green-600">
+                {benchmarks.reduce((max, b) => (b.return > max.return ? b : max), benchmarks[0]).name}
+                {' '}
+                (+{benchmarks.reduce((max, b) => (b.return > max.return ? b : max), benchmarks[0]).return.toFixed(2)}%)
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-600 dark:text-gray-400 mb-1">En Düşük Performans</p>
+              <p className="text-sm font-bold text-red-600">
+                {benchmarks.reduce((min, b) => (b.return < min.return ? b : min), benchmarks[0]).name}
+                {' '}
+                ({benchmarks.reduce((min, b) => (b.return < min.return ? b : min), benchmarks[0]).return.toFixed(2)}%)
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
