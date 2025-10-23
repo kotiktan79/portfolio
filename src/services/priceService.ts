@@ -467,7 +467,7 @@ const FALLBACK_PRICES: PriceData = {
 };
 
 const priceCache: { [key: string]: { price: number; timestamp: number; source: string } } = {};
-const CACHE_DURATION = 3000;
+const CACHE_DURATION = 800;
 
 let connectionStatus: ConnectionStatus = 'disconnected';
 const statusListeners: ((status: ConnectionStatus) => void)[] = [];
