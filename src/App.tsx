@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, TrendingUp, RefreshCw, Target, Moon, Sun, Bell, BarChart3, Wifi, WifiOff, Activity, Download, Tv, DollarSign, Database, Shield, Palette } from 'lucide-react';
+import { Plus, TrendingUp, RefreshCw, Target, Moon, Sun, Bell, BarChart3, Wifi, WifiOff, Activity, Download, Tv, DollarSign, Database, Shield, Palette, PieChart } from 'lucide-react';
 import { supabase, Holding, AssetType } from './lib/supabase';
 import { AddHoldingModal } from './components/AddHoldingModal';
 import { EditHoldingModal } from './components/EditHoldingModal';
@@ -29,6 +29,7 @@ import { Security2FA } from './components/Security2FA';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
 import { AutoRebalanceSettings } from './components/AutoRebalanceSettings';
 import { PerformanceDashboard } from './components/PerformanceDashboard';
+import { AssetAllocationPage } from './components/AssetAllocationPage';
 import { useToast } from './hooks/useToast';
 import { useDarkMode } from './hooks/useDarkMode';
 import { useTheme } from './hooks/useTheme';
@@ -65,6 +66,7 @@ function App() {
   const [showBackupModal, setShowBackupModal] = useState(false);
   const [show2FAModal, setShow2FAModal] = useState(false);
   const [showAutoRebalanceModal, setShowAutoRebalanceModal] = useState(false);
+  const [showAllocationPage, setShowAllocationPage] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAssetType, setSelectedAssetType] = useState<AssetType | 'all'>('all');
   const [sortBy, setSortBy] = useState<'name' | 'value' | 'pnl' | 'pnl_percent'>('value');
@@ -412,6 +414,15 @@ function App() {
   const totalInvestmentUSD = totalInvestment / usdRate;
   const totalCurrentValueUSD = totalCurrentValue / usdRate;
 
+  if (showAllocationPage) {
+    return (
+      <AssetAllocationPage
+        holdings={holdings}
+        onBack={() => setShowAllocationPage(false)}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 dark:from-gray-900 dark:via-gray-800 dark:to-slate-900">
       <div className="max-w-7xl mx-auto px-4 py-8">
@@ -429,6 +440,14 @@ function App() {
                 </div>
               </div>
               <div className="flex flex-wrap gap-2 w-full md:w-auto relative z-10">
+                <button
+                  onClick={() => setShowAllocationPage(true)}
+                  className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-lg transition-all shadow-lg hover:shadow-xl hover:scale-105 font-medium"
+                  title="Varlık Dağılımı"
+                >
+                  <PieChart size={18} />
+                  <span className="hidden sm:inline">Dağılım</span>
+                </button>
                 <a
                   href="/dashboard.html"
                   target="_blank"
