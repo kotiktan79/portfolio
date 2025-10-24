@@ -46,21 +46,30 @@ const COINGECKO_IDS: { [key: string]: string } = {
 };
 
 export async function fetchCryptoPrice(symbol: string): Promise<number | null> {
-  const binanceSymbol = CRYPTO_SYMBOLS[symbol];
-  if (!binanceSymbol) return null;
-
   try {
-    const response = await fetch(`${BINANCE_API}?symbol=${binanceSymbol}`);
-    if (!response.ok) throw new Error('Binance API failed');
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const response = await fetch(
+      `${supabaseUrl}/functions/v1/price-proxy?type=crypto&symbols=${symbol}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        }
+      }
+    );
 
-    const data = await response.json();
-    const usdPrice = parseFloat(data.price);
-    const usdTryRate = await fetchUSDTRYRate();
-    return usdPrice * usdTryRate;
+    if (response.ok) {
+      const result = await response.json();
+      if (result.success && result.data?.[symbol]) {
+        const usdPrice = result.data[symbol];
+        const usdTryRate = await fetchUSDTRYRate();
+        return usdPrice * usdTryRate;
+      }
+    }
   } catch (error) {
-    console.warn(`Binance failed for ${symbol}, trying CoinGecko...`);
-    return await fetchCryptoFromCoinGecko(symbol);
+    console.warn(`Proxy failed for ${symbol}, trying CoinGecko...`);
   }
+
+  return await fetchCryptoFromCoinGecko(symbol);
 }
 
 export async function fetchCryptoFromCoinGecko(symbol: string): Promise<number | null> {
@@ -84,15 +93,27 @@ export async function fetchCryptoFromCoinGecko(symbol: string): Promise<number |
 
 export async function fetchUSDTRYRate(): Promise<number> {
   try {
-    const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
-    if (!response.ok) throw new Error('ExchangeRate-API failed');
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const response = await fetch(
+      `${supabaseUrl}/functions/v1/price-proxy?type=usd`,
+      {
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        }
+      }
+    );
 
-    const data = await response.json();
-    return data.rates.TRY || 41.96;
+    if (response.ok) {
+      const result = await response.json();
+      if (result.success && result.data?.rate) {
+        return result.data.rate;
+      }
+    }
   } catch (error) {
-    console.warn('ExchangeRate-API failed, trying alternative...');
-    return await fetchUSDTRYFromAlternative();
+    console.warn('Proxy failed for USD/TRY, using fallback...');
   }
+
+  return 42.0;
 }
 
 export async function fetchUSDTRYFromAlternative(): Promise<number> {
@@ -110,47 +131,58 @@ export async function fetchUSDTRYFromAlternative(): Promise<number> {
 
 export async function fetchEURTRYRate(): Promise<number> {
   try {
-    const response = await fetch('https://api.exchangerate-api.com/v4/latest/EUR');
-    if (!response.ok) throw new Error('ExchangeRate-API failed');
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const response = await fetch(
+      `${supabaseUrl}/functions/v1/price-proxy?type=eur`,
+      {
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        }
+      }
+    );
 
-    const data = await response.json();
-    return data.rates.TRY || 48.8;
-  } catch (error) {
-    console.warn('EUR/TRY primary API failed, trying alternative...');
-    try {
-      const response = await fetch('https://open.er-api.com/v6/latest/EUR');
-      if (!response.ok) throw new Error('Alternative API failed');
-
-      const data = await response.json();
-      return data.rates?.TRY || 48.8;
-    } catch (altError) {
-      console.error('All EUR/TRY APIs failed:', altError);
-      return 48.8;
+    if (response.ok) {
+      const result = await response.json();
+      if (result.success && result.data?.rate) {
+        return result.data.rate;
+      }
     }
+  } catch (error) {
+    console.warn('Proxy failed for EUR/TRY, using fallback...');
   }
+
+  return 48.8;
 }
 
 export async function fetchGoldPrice(): Promise<number> {
   try {
-    const response = await fetch('https://data-asg.goldprice.org/dbXRates/USD', {
-      cache: 'no-cache'
-    });
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const response = await fetch(
+      `${supabaseUrl}/functions/v1/price-proxy?type=gold`,
+      {
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        }
+      }
+    );
 
-    if (!response.ok) throw new Error('GoldPrice.org API failed');
-
-    const data = await response.json();
-    const goldPricePerOunce = data.items?.[0]?.xauPrice || 2650;
-    const gramPerOunce = 31.1035;
-    const usdTryRate = await fetchUSDTRYRate();
-
-    const tryPrice = (goldPricePerOunce / gramPerOunce) * usdTryRate;
-    console.log(`Gold: $${goldPricePerOunce}/oz -> ${tryPrice.toFixed(2)} ₺/gram`);
-
-    return tryPrice;
+    if (response.ok) {
+      const result = await response.json();
+      if (result.success && result.data?.pricePerOz) {
+        const goldPricePerOunce = result.data.pricePerOz;
+        const gramPerOunce = 31.1035;
+        const usdTryRate = await fetchUSDTRYRate();
+        const tryPrice = (goldPricePerOunce / gramPerOunce) * usdTryRate;
+        console.log(`Gold: $${goldPricePerOunce}/oz -> ${tryPrice.toFixed(2)} ₺/gram`);
+        return tryPrice;
+      }
+    }
   } catch (error) {
-    console.warn('GoldPrice.org failed, trying alternative sources...');
-    return await fetchGoldFromAlternative();
+    console.warn('Proxy failed for gold, using fallback...');
   }
+
+  const usdTryRate = await fetchUSDTRYRate();
+  return (2650 / 31.1035) * usdTryRate;
 }
 
 export async function fetchGoldFromAlternative(): Promise<number> {
@@ -197,40 +229,33 @@ const EURONEXT_STOCKS: { [key: string]: string } = {
 
 export async function fetchEuropeanStockPrice(symbol: string): Promise<number | null> {
   try {
-    const stockSymbol = EURONEXT_STOCKS[symbol];
-    if (!stockSymbol) return null;
+    if (!EURONEXT_STOCKS[symbol]) return null;
 
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const response = await fetch(
-      `https://query1.finance.yahoo.com/v8/finance/chart/${stockSymbol}`,
+      `${supabaseUrl}/functions/v1/price-proxy?type=european&symbols=${symbol}`,
       {
-        cache: 'no-cache',
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
         }
       }
     );
 
-    if (!response.ok) {
-      console.warn(`Yahoo Finance failed for ${symbol}, using Finnhub...`);
-      return await fetchFromFinnhub(symbol, stockSymbol);
+    if (response.ok) {
+      const result = await response.json();
+      if (result.success && result.data?.price) {
+        const priceEUR = result.data.price;
+        const eurTryRate = await fetchEURTRYRate();
+        const priceTRY = priceEUR * eurTryRate;
+        console.log(`${symbol}: €${priceEUR.toFixed(2)} -> ${priceTRY.toFixed(2)} ₺`);
+        return priceTRY;
+      }
     }
-
-    const data = await response.json();
-    const priceEUR = data?.chart?.result?.[0]?.meta?.regularMarketPrice;
-
-    if (!priceEUR) {
-      return await fetchFromFinnhub(symbol, stockSymbol);
-    }
-
-    const eurTryRate = await fetchEURTRYRate();
-    const priceTRY = priceEUR * eurTryRate;
-
-    console.log(`${symbol}: €${priceEUR.toFixed(2)} -> ${priceTRY.toFixed(2)} ₺`);
-    return priceTRY;
   } catch (error) {
-    console.warn(`European stock price fetch failed for ${symbol}:`, error);
-    return await fetchFromFinnhub(symbol, EURONEXT_STOCKS[symbol]);
+    console.warn(`Proxy failed for ${symbol}, trying Finnhub...`);
   }
+
+  return await fetchFromFinnhub(symbol, EURONEXT_STOCKS[symbol]);
 }
 
 export async function fetchFromFinnhub(symbol: string, tickerSymbol: string): Promise<number | null> {
@@ -650,23 +675,19 @@ export async function fetchMultiplePrices(symbols: { symbol: string; assetType: 
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const symbolList = bistStocks.map(s => s.symbol).join(',');
-      const timestamp = Date.now();
       const response = await fetch(
-        `${supabaseUrl}/functions/v1/bist-live-prices?symbols=${symbolList}&t=${timestamp}`,
+        `${supabaseUrl}/functions/v1/price-proxy?type=bist&symbols=${symbolList}`,
         {
-          cache: 'no-cache',
           headers: {
             'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
           }
         }
       );
 
       if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.data) {
-          Object.entries(data.data).forEach(([symbol, priceData]: [string, any]) => {
+        const result = await response.json();
+        if (result.success && result.data) {
+          Object.entries(result.data).forEach(([symbol, priceData]: [string, any]) => {
             const price = priceData.price;
             prices[symbol] = price;
 
@@ -680,10 +701,10 @@ export async function fetchMultiplePrices(symbols: { symbol: string; assetType: 
               symbol,
               price,
               timestamp: Date.now(),
-              source: 'Edge Function',
+              source: 'Price Proxy',
             });
 
-            console.log(`${symbol}: ${price} ₺ (Edge Function)`);
+            console.log(`${symbol}: ${price} ₺ (Proxy)`);
           });
         }
       }
