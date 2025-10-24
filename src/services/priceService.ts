@@ -559,6 +559,7 @@ export async function fetchBISTFromAlternative(symbol: string): Promise<number |
 const FALLBACK_PRICES: PriceData = {
   'AKSEN': 51.20,
   'ALTIN': 5837,
+  'GOLD': 5837,
   'ASELS': 215.40,
   'BIMAS': 565.00,
   'BTC': 4479604.569,
@@ -773,7 +774,7 @@ export async function fetchRealTimePrice(symbol: string, assetType: AssetType): 
         break;
 
       case 'commodity':
-        if (symbol === 'ALTIN') {
+        if (symbol === 'ALTIN' || symbol === 'GOLD') {
           price = await fetchGoldPrice();
         }
         break;
