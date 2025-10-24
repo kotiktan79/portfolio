@@ -4,6 +4,7 @@ import { Holding } from '../lib/supabase';
 import { addTransaction } from '../services/transactionService';
 import { supabase } from '../lib/supabase';
 import { formatCurrency } from '../services/priceService';
+import { updateCashBalance } from '../services/cashService';
 
 interface BuySellModalProps {
   holding: Holding;
@@ -50,6 +51,11 @@ export function BuySellModal({ holding, type, onClose, onComplete }: BuySellModa
         const totalCost = (holding.purchase_price * holding.quantity) + totalWithFee;
         const newAvgPrice = totalCost / newQuantity;
 
+        await updateCashBalance('TRY', totalWithFee, 'buy',
+          `${holding.symbol} alış - ${quantity} adet x ${price} ₺`,
+          holding.id
+        );
+
         await supabase
           .from('holdings')
           .update({
@@ -60,6 +66,11 @@ export function BuySellModal({ holding, type, onClose, onComplete }: BuySellModa
           .eq('id', holding.id);
       } else {
         const realizedProfit = (parseFloat(price) - holding.purchase_price) * parseFloat(quantity) - parseFloat(fee);
+
+        await updateCashBalance('TRY', totalWithFee, 'sell',
+          `${holding.symbol} satış - ${quantity} adet x ${price} ₺ (Kar/Zarar: ${realizedProfit.toFixed(2)} ₺)`,
+          holding.id
+        );
 
         await supabase
           .from('transactions')

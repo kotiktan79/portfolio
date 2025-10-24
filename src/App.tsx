@@ -24,6 +24,7 @@ import { BackupRestore } from './components/BackupRestore';
 import { AIPortfolioSuggestions } from './components/AIPortfolioSuggestions';
 import { MultiBenchmark } from './components/MultiBenchmark';
 import { AdvancedAnalytics } from './components/AdvancedAnalytics';
+import { CashDashboard } from './components/CashDashboard';
 import { Security2FA } from './components/Security2FA';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
 import { AutoRebalanceSettings } from './components/AutoRebalanceSettings';
@@ -600,17 +601,21 @@ function App() {
             )}
 
             {livePnlData && (
-              <div>
-                <h3 className="text-lg font-bold text-slate-800 dark:text-gray-200 mb-3 flex items-center gap-2">
-                  <TrendingUp className="text-blue-600" size={20} />
-                  Periyodik PnL
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <PnLCard data={livePnlData.daily} />
-                  <PnLCard data={livePnlData.weekly} />
-                  <PnLCard data={livePnlData.monthly} />
+              <>
+                <CashDashboard />
+
+                <div>
+                  <h3 className="text-lg font-bold text-slate-800 dark:text-gray-200 mb-3 flex items-center gap-2">
+                    <TrendingUp className="text-blue-600" size={20} />
+                    Periyodik PnL
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <PnLCard data={livePnlData.daily} />
+                    <PnLCard data={livePnlData.weekly} />
+                    <PnLCard data={livePnlData.monthly} />
+                  </div>
                 </div>
-              </div>
+              </>
             )}
 
             {showCharts && holdings.length > 0 && (

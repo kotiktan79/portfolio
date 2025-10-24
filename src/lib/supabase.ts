@@ -6,6 +6,7 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIU
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export type AssetType = 'stock' | 'crypto' | 'currency' | 'fund' | 'eurobond' | 'commodity';
+export type TransactionType = 'deposit' | 'withdrawal' | 'buy' | 'sell' | 'dividend';
 
 export interface Holding {
   id: string;
@@ -16,4 +17,28 @@ export interface Holding {
   current_price: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface CashBalance {
+  id: string;
+  user_id: string;
+  currency: string;
+  balance: number;
+  total_deposits: number;
+  total_withdrawals: number;
+  realized_profit: number;
+  updated_at: string;
+}
+
+export interface CashTransaction {
+  id: string;
+  user_id: string;
+  transaction_type: TransactionType;
+  currency: string;
+  amount: number;
+  balance_before: number;
+  balance_after: number;
+  related_holding_id?: string;
+  notes?: string;
+  created_at: string;
 }
