@@ -160,6 +160,7 @@ export async function fetchGoldPrice(): Promise<number> {
     const response = await fetch(
       `${supabaseUrl}/functions/v1/price-proxy?type=gold`,
       {
+        cache: 'no-cache',
         headers: {
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
         }
@@ -173,16 +174,22 @@ export async function fetchGoldPrice(): Promise<number> {
         const gramPerOunce = 31.1035;
         const usdTryRate = await fetchUSDTRYRate();
         const tryPrice = (goldPricePerOunce / gramPerOunce) * usdTryRate;
-        console.log(`Gold: $${goldPricePerOunce}/oz -> ${tryPrice.toFixed(2)} ₺/gram`);
+        console.log(`🥇 Gold Price Calculation:`);
+        console.log(`   - Price per oz: $${goldPricePerOunce}`);
+        console.log(`   - USD/TRY rate: ${usdTryRate}`);
+        console.log(`   - Price per gram: ${(goldPricePerOunce / gramPerOunce).toFixed(2)} USD`);
+        console.log(`   - Final TL price: ${tryPrice.toFixed(2)} ₺/gram`);
         return tryPrice;
       }
     }
   } catch (error) {
-    console.warn('Proxy failed for gold, using fallback...');
+    console.warn('Proxy failed for gold, using fallback...', error);
   }
 
   const usdTryRate = await fetchUSDTRYRate();
-  return (2650 / 31.1035) * usdTryRate;
+  const fallbackPrice = (2650 / 31.1035) * usdTryRate;
+  console.log(`🥇 Gold (fallback): ${fallbackPrice.toFixed(2)} ₺/gram`);
+  return fallbackPrice;
 }
 
 export async function fetchGoldFromAlternative(): Promise<number> {
@@ -600,9 +607,10 @@ export async function fetchRealTimePrice(symbol: string, assetType: AssetType): 
   const now = Date.now();
   const cached = priceCache[symbol];
 
-  const cacheDuration = assetType === 'stock' ? 0 : CACHE_DURATION;
+  const cacheDuration = (assetType === 'stock' || assetType === 'commodity') ? 0 : CACHE_DURATION;
 
   if (cached && now - cached.timestamp < cacheDuration) {
+    console.log(`Using cached price for ${symbol}: ${cached.price}`);
     return cached.price;
   }
 
