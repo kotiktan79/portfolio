@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Wallet, Plus, Minus, TrendingUp, DollarSign, ArrowDownCircle, ArrowUpCircle, Zap } from 'lucide-react';
+import { Wallet, Plus, Minus, TrendingUp, DollarSign, ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
 import { CashBalance, CashTransaction } from '../lib/supabase';
 import { getCashBalance, getCashTransactions, updateCashBalance, formatCash } from '../services/cashService';
 
@@ -8,7 +8,6 @@ export function CashDashboard() {
   const [transactions, setTransactions] = useState<CashTransaction[]>([]);
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
-  const [showProfitWithdrawModal, setShowProfitWithdrawModal] = useState(false);
   const [amount, setAmount] = useState('');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
@@ -56,35 +55,6 @@ export function CashDashboard() {
 
     if (success) {
       setShowWithdrawModal(false);
-      setAmount('');
-      setNotes('');
-      await loadData();
-    } else {
-      alert('İşlem başarısız oldu');
-    }
-    setLoading(false);
-  }
-
-  async function handleProfitWithdraw() {
-    if (!amount || parseFloat(amount) <= 0) return;
-    if (!balance || balance.realized_profit <= 0) {
-      alert('Çekilecek kar yok');
-      return;
-    }
-    if (parseFloat(amount) > balance.realized_profit) {
-      alert('Gerçekleşen karınızdan fazla çekemezsiniz');
-      return;
-    }
-    if (parseFloat(amount) > balance.balance) {
-      alert('Yetersiz bakiye - Önce satış yaparak kar realize edin');
-      return;
-    }
-
-    setLoading(true);
-    const success = await updateCashBalance('TRY', parseFloat(amount), 'withdrawal', notes || 'Kar çekme');
-
-    if (success) {
-      setShowProfitWithdrawModal(false);
       setAmount('');
       setNotes('');
       await loadData();
@@ -152,15 +122,6 @@ export function CashDashboard() {
             <Minus size={16} />
             <span className="hidden sm:inline">Çek</span>
           </button>
-          {balance && balance.realized_profit > 0 && (
-            <button
-              onClick={() => setShowProfitWithdrawModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg hover:from-yellow-600 hover:to-orange-600 transition-all font-medium shadow-md hover:shadow-lg"
-            >
-              <Zap size={16} />
-              <span className="hidden sm:inline">Kar Çek</span>
-            </button>
-          )}
         </div>
       </div>
 
@@ -362,116 +323,6 @@ export function CashDashboard() {
                   className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? 'İşleniyor...' : 'Çek'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showProfitWithdrawModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full border-2 border-yellow-500">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20">
-              <div className="flex items-center gap-3">
-                <Zap className="text-yellow-600" size={24} />
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Kar Çek</h3>
-              </div>
-              <button onClick={() => setShowProfitWithdrawModal(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                <Plus size={24} className="rotate-45" />
-              </button>
-            </div>
-            <div className="p-6 space-y-4">
-              <div className="space-y-2">
-                <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                  <p className="text-sm text-green-800 dark:text-green-300">
-                    Gerçekleşen Kar: <strong className="text-lg">{balance ? formatCash(balance.realized_profit, 'TRY') : '0.00 ₺'}</strong>
-                  </p>
-                </div>
-                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                  <p className="text-sm text-blue-800 dark:text-blue-300">
-                    Mevcut Bakiye: <strong>{balance ? formatCash(balance.balance, 'TRY') : '0.00 ₺'}</strong>
-                  </p>
-                </div>
-              </div>
-
-              <div className="p-4 bg-gradient-to-r from-yellow-100 to-orange-100 dark:from-yellow-900/30 dark:to-orange-900/30 border-2 border-yellow-300 dark:border-yellow-700 rounded-lg">
-                <p className="text-sm text-yellow-900 dark:text-yellow-300 font-medium">
-                  💡 Kar çekme işlemi sadece gerçekleşen karınızdan yapılabilir. Satış yaptıkça kar realize olur.
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Çekilecek Miktar (₺)
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  max={balance?.realized_profit || 0}
-                  className="w-full px-4 py-2 border-2 border-yellow-300 dark:border-yellow-700 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-yellow-500"
-                  placeholder="0.00"
-                />
-                <div className="flex gap-2 mt-2">
-                  <button
-                    type="button"
-                    onClick={() => balance && setAmount((balance.realized_profit * 0.25).toFixed(2))}
-                    className="text-xs px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded hover:bg-yellow-200 dark:hover:bg-yellow-900/50"
-                  >
-                    25%
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => balance && setAmount((balance.realized_profit * 0.5).toFixed(2))}
-                    className="text-xs px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded hover:bg-yellow-200 dark:hover:bg-yellow-900/50"
-                  >
-                    50%
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => balance && setAmount((balance.realized_profit * 0.75).toFixed(2))}
-                    className="text-xs px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded hover:bg-yellow-200 dark:hover:bg-yellow-900/50"
-                  >
-                    75%
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => balance && setAmount(balance.realized_profit.toFixed(2))}
-                    className="text-xs px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded hover:bg-yellow-200 dark:hover:bg-yellow-900/50"
-                  >
-                    Tümü
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Not (Opsiyonel)
-                </label>
-                <input
-                  type="text"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-yellow-500"
-                  placeholder="Örn: Yıllık kar çekimi"
-                />
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  onClick={() => setShowProfitWithdrawModal(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
-                  İptal
-                </button>
-                <button
-                  onClick={handleProfitWithdraw}
-                  disabled={loading || !amount || parseFloat(amount) <= 0}
-                  className="flex-1 px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg hover:from-yellow-600 hover:to-orange-600 disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-lg"
-                >
-                  {loading ? 'İşleniyor...' : '💰 Kar Çek'}
                 </button>
               </div>
             </div>
