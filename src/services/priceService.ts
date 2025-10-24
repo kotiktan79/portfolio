@@ -132,31 +132,6 @@ export async function fetchEURTRYRate(): Promise<number> {
 
 export async function fetchGoldPrice(): Promise<number> {
   try {
-    const response = await fetch('https://api.metals.live/v1/spot/gold', {
-      cache: 'no-cache'
-    });
-
-    if (!response.ok) throw new Error('Metals.live API failed');
-
-    const data = await response.json();
-    console.log('Gold API Response:', data);
-
-    const goldPricePerOunce = data[0]?.price || data.price || 2650;
-    const gramPerOunce = 31.1035;
-    const usdTryRate = await fetchUSDTRYRate();
-
-    const tryPrice = (goldPricePerOunce / gramPerOunce) * usdTryRate;
-    console.log(`Gold: $${goldPricePerOunce}/oz -> ${tryPrice.toFixed(2)} ₺/gram`);
-
-    return tryPrice;
-  } catch (error) {
-    console.warn('Metals.live failed, trying alternative sources...');
-    return await fetchGoldFromAlternative();
-  }
-}
-
-export async function fetchGoldFromAlternative(): Promise<number> {
-  try {
     const response = await fetch('https://data-asg.goldprice.org/dbXRates/USD', {
       cache: 'no-cache'
     });
@@ -169,28 +144,38 @@ export async function fetchGoldFromAlternative(): Promise<number> {
     const usdTryRate = await fetchUSDTRYRate();
 
     const tryPrice = (goldPricePerOunce / gramPerOunce) * usdTryRate;
+    console.log(`Gold: $${goldPricePerOunce}/oz -> ${tryPrice.toFixed(2)} ₺/gram`);
+
+    return tryPrice;
+  } catch (error) {
+    console.warn('GoldPrice.org failed, trying alternative sources...');
+    return await fetchGoldFromAlternative();
+  }
+}
+
+export async function fetchGoldFromAlternative(): Promise<number> {
+  try {
+    const response = await fetch('https://api.metals.live/v1/spot/gold', {
+      cache: 'no-cache'
+    });
+
+    if (!response.ok) throw new Error('Metals.live API failed');
+
+    const data = await response.json();
+    const goldPricePerOunce = data[0]?.price || data.price || 2650;
+    const gramPerOunce = 31.1035;
+    const usdTryRate = await fetchUSDTRYRate();
+
+    const tryPrice = (goldPricePerOunce / gramPerOunce) * usdTryRate;
     console.log(`Gold (alt): $${goldPricePerOunce}/oz -> ${tryPrice.toFixed(2)} ₺/gram`);
 
     return tryPrice;
   } catch (altError) {
-    console.warn('Alternative gold API failed, trying CoinGecko...');
-    try {
-      const response = await fetch(
-        'https://api.coingecko.com/api/v3/simple/price?ids=tether-gold&vs_currencies=try',
-        { cache: 'no-cache' }
-      );
-
-      if (!response.ok) throw new Error('CoinGecko gold failed');
-
-      const data = await response.json();
-      const goldPriceTRY = data['tether-gold']?.try || 5837;
-
-      console.log(`Gold (CoinGecko): ${goldPriceTRY.toFixed(2)} ₺/gram`);
-      return goldPriceTRY;
-    } catch (cgError) {
-      console.error('All gold price APIs failed:', cgError);
-      return 5837;
-    }
+    console.warn('Metals.live failed, using fallback price...');
+    const usdTryRate = await fetchUSDTRYRate();
+    const fallbackPrice = (2650 / 31.1035) * usdTryRate;
+    console.log(`Gold (fallback): ${fallbackPrice.toFixed(2)} ₺/gram`);
+    return fallbackPrice;
   }
 }
 
