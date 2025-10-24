@@ -1,4 +1,5 @@
 import { AssetType } from '../lib/supabase';
+import { getCachedPrice, setCachedPrice } from './persistentCache';
 
 interface PriceData {
   [symbol: string]: number;
@@ -16,6 +17,75 @@ export type ConnectionStatus = 'connected' | 'disconnected' | 'connecting' | 'er
 const BINANCE_API = 'https://api.binance.com/api/v3/ticker/price';
 const BINANCE_WS = 'wss://stream.binance.com:9443/ws';
 const COINGECKO_API = 'https://api.coingecko.com/api/v3';
+
+// Rate limiting
+interface RateLimitInfo {
+  requests: number[];
+  limit: number;
+  window: number; // milliseconds
+}
+
+const rateLimits: { [key: string]: RateLimitInfo } = {
+  'binance': { requests: [], limit: 50, window: 60000 }, // 50/min
+  'coingecko': { requests: [], limit: 10, window: 60000 }, // 10/min free tier
+  'exchangerate': { requests: [], limit: 100, window: 3600000 }, // 100/hour
+  'yahoo': { requests: [], limit: 100, window: 3600000 }, // Conservative limit
+  'proxy': { requests: [], limit: 200, window: 60000 }, // 200/min
+};
+
+function canMakeRequest(service: string): boolean {
+  const limit = rateLimits[service];
+  if (!limit) return true;
+
+  const now = Date.now();
+  // Clean old requests
+  limit.requests = limit.requests.filter(time => now - time < limit.window);
+
+  if (limit.requests.length >= limit.limit) {
+    console.warn(`⚠️ Rate limit reached for ${service}. Waiting...`);
+    return false;
+  }
+
+  limit.requests.push(now);
+  return true;
+}
+
+async function waitForRateLimit(service: string): Promise<void> {
+  const limit = rateLimits[service];
+  if (!limit) return;
+
+  const now = Date.now();
+  const oldestRequest = limit.requests[0];
+  if (oldestRequest) {
+    const waitTime = limit.window - (now - oldestRequest);
+    if (waitTime > 0) {
+      console.log(`⏳ Waiting ${Math.ceil(waitTime / 1000)}s for ${service} rate limit...`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
+  }
+}
+
+// Retry wrapper for API calls
+async function retryFetch<T>(
+  fetchFn: () => Promise<T>,
+  retries: number = 2,
+  delay: number = 1000
+): Promise<T | null> {
+  for (let i = 0; i <= retries; i++) {
+    try {
+      return await fetchFn();
+    } catch (error) {
+      if (i === retries) {
+        console.error(`All ${retries + 1} attempts failed`);
+        return null;
+      }
+      console.log(`Attempt ${i + 1} failed, retrying in ${delay}ms...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      delay *= 2; // Exponential backoff
+    }
+  }
+  return null;
+}
 
 const CRYPTO_SYMBOLS: { [key: string]: string } = {
   'BTC': 'BTCUSDT',
@@ -46,6 +116,10 @@ const COINGECKO_IDS: { [key: string]: string } = {
 };
 
 export async function fetchCryptoPrice(symbol: string): Promise<number | null> {
+  if (!canMakeRequest('proxy')) {
+    await waitForRateLimit('proxy');
+  }
+
   try {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const response = await fetch(
@@ -73,6 +147,10 @@ export async function fetchCryptoPrice(symbol: string): Promise<number | null> {
 }
 
 export async function fetchCryptoFromCoinGecko(symbol: string): Promise<number | null> {
+  if (!canMakeRequest('coingecko')) {
+    await waitForRateLimit('coingecko');
+  }
+
   try {
     const coinId = COINGECKO_IDS[symbol];
     if (!coinId) return null;
@@ -92,6 +170,10 @@ export async function fetchCryptoFromCoinGecko(symbol: string): Promise<number |
 }
 
 export async function fetchUSDTRYRate(): Promise<number> {
+  if (!canMakeRequest('proxy')) {
+    await waitForRateLimit('proxy');
+  }
+
   try {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const response = await fetch(
@@ -110,26 +192,34 @@ export async function fetchUSDTRYRate(): Promise<number> {
       }
     }
   } catch (error) {
-    console.warn('Proxy failed for USD/TRY, using fallback...');
+    console.warn('Proxy failed for USD/TRY, trying alternative...');
   }
 
-  return 42.0;
+  return await fetchUSDTRYFromAlternative();
 }
 
 export async function fetchUSDTRYFromAlternative(): Promise<number> {
+  if (!canMakeRequest('exchangerate')) {
+    await waitForRateLimit('exchangerate');
+  }
+
   try {
     const response = await fetch('https://open.er-api.com/v6/latest/USD');
     if (!response.ok) throw new Error('Alternative API failed');
 
     const data = await response.json();
-    return data.rates?.TRY || 41.96;
+    return data.rates?.TRY || 42.0;
   } catch (error) {
-    console.error('All USD/TRY APIs failed:', error);
-    return 41.96;
+    console.error('All USD/TRY APIs failed, using fallback:', error);
+    return 42.0;
   }
 }
 
 export async function fetchEURTRYRate(): Promise<number> {
+  if (!canMakeRequest('proxy')) {
+    await waitForRateLimit('proxy');
+  }
+
   try {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const response = await fetch(
@@ -148,13 +238,31 @@ export async function fetchEURTRYRate(): Promise<number> {
       }
     }
   } catch (error) {
-    console.warn('Proxy failed for EUR/TRY, using fallback...');
+    console.warn('Proxy failed for EUR/TRY, trying alternative...');
+  }
+
+  // Fallback: Calculate from USD/TRY and EUR/USD
+  try {
+    if (!canMakeRequest('exchangerate')) {
+      await waitForRateLimit('exchangerate');
+    }
+    const response = await fetch('https://open.er-api.com/v6/latest/EUR');
+    if (response.ok) {
+      const data = await response.json();
+      return data.rates?.TRY || 48.8;
+    }
+  } catch (error) {
+    console.warn('Alternative EUR/TRY failed, using static fallback');
   }
 
   return 48.8;
 }
 
 export async function fetchGoldPrice(): Promise<number> {
+  if (!canMakeRequest('proxy')) {
+    await waitForRateLimit('proxy');
+  }
+
   try {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const response = await fetch(
@@ -174,22 +282,15 @@ export async function fetchGoldPrice(): Promise<number> {
         const gramPerOunce = 31.1035;
         const usdTryRate = await fetchUSDTRYRate();
         const tryPrice = (goldPricePerOunce / gramPerOunce) * usdTryRate;
-        console.log(`🥇 Gold Price Calculation:`);
-        console.log(`   - Price per oz: $${goldPricePerOunce}`);
-        console.log(`   - USD/TRY rate: ${usdTryRate}`);
-        console.log(`   - Price per gram: ${(goldPricePerOunce / gramPerOunce).toFixed(2)} USD`);
-        console.log(`   - Final TL price: ${tryPrice.toFixed(2)} ₺/gram`);
+        console.log(`🥇 Gold Price: $${goldPricePerOunce}/oz → ${tryPrice.toFixed(2)} ₺/gram`);
         return tryPrice;
       }
     }
   } catch (error) {
-    console.warn('Proxy failed for gold, using fallback...', error);
+    console.warn('Proxy failed for gold, trying alternative...', error);
   }
 
-  const usdTryRate = await fetchUSDTRYRate();
-  const fallbackPrice = (2650 / 31.1035) * usdTryRate;
-  console.log(`🥇 Gold (fallback): ${fallbackPrice.toFixed(2)} ₺/gram`);
-  return fallbackPrice;
+  return await fetchGoldFromAlternative();
 }
 
 export async function fetchGoldFromAlternative(): Promise<number> {
@@ -607,11 +708,31 @@ export async function fetchRealTimePrice(symbol: string, assetType: AssetType): 
   const now = Date.now();
   const cached = priceCache[symbol];
 
-  const cacheDuration = (assetType === 'stock' || assetType === 'commodity') ? 0 : CACHE_DURATION;
+  // Smart cache duration based on asset type and volatility
+  let cacheDuration = CACHE_DURATION;
 
+  if (assetType === 'stock') {
+    cacheDuration = 30000; // 30 seconds for stocks
+  } else if (assetType === 'crypto') {
+    cacheDuration = 15000; // 15 seconds for crypto (more volatile)
+  } else if (assetType === 'commodity') {
+    cacheDuration = 60000; // 1 minute for commodities
+  } else if (assetType === 'currency') {
+    cacheDuration = 300000; // 5 minutes for forex (less volatile)
+  } else {
+    cacheDuration = 60000; // 1 minute for others
+  }
+
+  // Check memory cache first
   if (cached && now - cached.timestamp < cacheDuration) {
-    console.log(`Using cached price for ${symbol}: ${cached.price}`);
     return cached.price;
+  }
+
+  // Check persistent cache (localStorage) if memory cache expired
+  const persistentPrice = getCachedPrice(symbol, cacheDuration);
+  if (persistentPrice !== null) {
+    priceCache[symbol] = { price: persistentPrice, timestamp: now, source: 'persistent' };
+    return persistentPrice;
   }
 
   let price: number | null = null;
@@ -658,6 +779,11 @@ export async function fetchRealTimePrice(symbol: string, assetType: AssetType): 
     timestamp: now,
     source,
   };
+
+  // Save to persistent cache if from API
+  if (price) {
+    setCachedPrice(symbol, finalPrice);
+  }
 
   if (source === 'fallback') {
     console.log(`${symbol}: Using fallback price ${finalPrice} ₺`);
