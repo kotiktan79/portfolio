@@ -121,12 +121,13 @@ export async function fetchCryptoPrice(symbol: string): Promise<number | null> {
   }
 
   try {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://jsqsfkyyopjfloxsqrbs.supabase.co';
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzcXNma3l5b3BqZmxveHNxcmJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjExNjc2MjAsImV4cCI6MjA3Njc0MzYyMH0.9d2gqIFCqXfPT72OjwARQOYuxjYCcy3bOK8FHII2ak8';
     const response = await fetch(
       `${supabaseUrl}/functions/v1/price-proxy?type=crypto&symbols=${symbol}`,
       {
         headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Authorization': `Bearer ${supabaseKey}`,
         }
       }
     );
@@ -180,12 +181,13 @@ export async function fetchUSDTRYRate(): Promise<number> {
   }
 
   try {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://jsqsfkyyopjfloxsqrbs.supabase.co';
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzcXNma3l5b3BqZmxveHNxcmJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjExNjc2MjAsImV4cCI6MjA3Njc0MzYyMH0.9d2gqIFCqXfPT72OjwARQOYuxjYCcy3bOK8FHII2ak8';
     const response = await fetch(
       `${supabaseUrl}/functions/v1/price-proxy?type=usd`,
       {
         headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Authorization': `Bearer ${supabaseKey}`,
         }
       }
     );
@@ -226,12 +228,13 @@ export async function fetchEURTRYRate(): Promise<number> {
   }
 
   try {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://jsqsfkyyopjfloxsqrbs.supabase.co';
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzcXNma3l5b3BqZmxveHNxcmJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjExNjc2MjAsImV4cCI6MjA3Njc0MzYyMH0.9d2gqIFCqXfPT72OjwARQOYuxjYCcy3bOK8FHII2ak8';
     const response = await fetch(
       `${supabaseUrl}/functions/v1/price-proxy?type=eur`,
       {
         headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Authorization': `Bearer ${supabaseKey}`,
         }
       }
     );
@@ -271,13 +274,14 @@ export async function fetchGoldPrice(): Promise<number> {
   console.log('🔍 Fetching gold price...');
 
   try {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://jsqsfkyyopjfloxsqrbs.supabase.co';
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzcXNma3l5b3BqZmxveHNxcmJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjExNjc2MjAsImV4cCI6MjA3Njc0MzYyMH0.9d2gqIFCqXfPT72OjwARQOYuxjYCcy3bOK8FHII2ak8';
     const response = await fetch(
       `${supabaseUrl}/functions/v1/price-proxy?type=gold`,
       {
         cache: 'no-cache',
         headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Authorization': `Bearer ${supabaseKey}`,
         }
       }
     );
@@ -365,12 +369,13 @@ export async function fetchEuropeanStockPrice(symbol: string): Promise<number | 
   try {
     if (!EURONEXT_STOCKS[symbol]) return null;
 
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://jsqsfkyyopjfloxsqrbs.supabase.co';
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzcXNma3l5b3BqZmxveHNxcmJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjExNjc2MjAsImV4cCI6MjA3Njc0MzYyMH0.9d2gqIFCqXfPT72OjwARQOYuxjYCcy3bOK8FHII2ak8';
     const response = await fetch(
       `${supabaseUrl}/functions/v1/price-proxy?type=european&symbols=${symbol}`,
       {
         headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Authorization': `Bearer ${supabaseKey}`,
         }
       }
     );
@@ -419,13 +424,13 @@ export async function fetchFromFinnhub(symbol: string, tickerSymbol: string): Pr
 
 export async function fetchBISTPrice(symbol: string): Promise<number | null> {
   try {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://jsqsfkyyopjfloxsqrbs.supabase.co';
     const response = await fetch(
       `${supabaseUrl}/functions/v1/bist-live-prices?symbols=${symbol}`,
       {
         cache: 'no-cache',
         headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Authorization': `Bearer ${supabaseKey}`,
         }
       }
     );
@@ -834,13 +839,13 @@ export async function fetchMultiplePrices(symbols: { symbol: string; assetType: 
 
   if (bistStocks.length > 0) {
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://jsqsfkyyopjfloxsqrbs.supabase.co';
       const symbolList = bistStocks.map(s => s.symbol).join(',');
       const response = await fetch(
         `${supabaseUrl}/functions/v1/price-proxy?type=bist&symbols=${symbolList}`,
         {
           headers: {
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'Authorization': `Bearer ${supabaseKey}`,
           }
         }
       );
