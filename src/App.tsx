@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, TrendingUp, RefreshCw, Target, Moon, Sun, Bell, BarChart3, Wifi, WifiOff, Activity, Download, Tv, DollarSign, Database, Shield, Palette, PieChart, Wallet } from 'lucide-react';
+import { Plus, TrendingUp, RefreshCw, Target, Moon, Sun, Bell, BarChart3, Wifi, WifiOff, Activity, Download, Tv, DollarSign, Database, Shield, Palette, PieChart } from 'lucide-react';
 import { supabase, Holding, AssetType } from './lib/supabase';
 import { AddHoldingModal } from './components/AddHoldingModal';
 import { EditHoldingModal } from './components/EditHoldingModal';
@@ -31,8 +31,6 @@ import { AutoRebalanceSettings } from './components/AutoRebalanceSettings';
 import { PerformanceDashboard } from './components/PerformanceDashboard';
 import { AssetAllocationPage } from './components/AssetAllocationPage';
 import ComprehensiveAnalytics from './components/ComprehensiveAnalytics';
-import BinanceDashboard from './components/BinanceDashboard';
-import BotPerformanceDashboard from './components/BotPerformanceDashboard';
 import { useToast } from './hooks/useToast';
 import { useDarkMode } from './hooks/useDarkMode';
 import { useTheme } from './hooks/useTheme';
@@ -71,7 +69,6 @@ function App() {
   const [showAutoRebalanceModal, setShowAutoRebalanceModal] = useState(false);
   const [showAllocationPage, setShowAllocationPage] = useState(false);
   const [showAnalyticsPage, setShowAnalyticsPage] = useState(false);
-  const [showBinancePage, setShowBinancePage] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAssetType, setSelectedAssetType] = useState<AssetType | 'all'>('all');
   const [sortBy, setSortBy] = useState<'name' | 'value' | 'pnl' | 'pnl_percent'>('value');
@@ -419,28 +416,6 @@ function App() {
   const totalInvestmentUSD = totalInvestment / usdRate;
   const totalCurrentValueUSD = totalCurrentValue / usdRate;
 
-  if (showBinancePage) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-white to-orange-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-6 flex items-center justify-between">
-            <button
-              onClick={() => setShowBinancePage(false)}
-              className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors shadow-md"
-            >
-              ← Geri
-            </button>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Binance Global</h1>
-          </div>
-          <div className="space-y-6">
-            <BinanceDashboard />
-            <BotPerformanceDashboard />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   if (showAnalyticsPage) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4">
@@ -486,14 +461,6 @@ function App() {
                 </div>
               </div>
               <div className="flex flex-wrap gap-2 w-full md:w-auto relative z-10">
-                <button
-                  onClick={() => setShowBinancePage(true)}
-                  className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white rounded-lg transition-all shadow-lg hover:shadow-xl hover:scale-105 font-medium"
-                  title="Binance Global"
-                >
-                  <Wallet size={18} />
-                  <span className="hidden sm:inline">Binance</span>
-                </button>
                 <button
                   onClick={() => setShowAnalyticsPage(true)}
                   className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg transition-all shadow-lg hover:shadow-xl hover:scale-105 font-medium"

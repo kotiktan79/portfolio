@@ -1,4 +1,5 @@
 import { Component, ReactNode } from 'react';
+import { AlertTriangle } from 'lucide-react';
 
 interface Props {
   children: ReactNode;
@@ -26,20 +27,27 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 max-w-md w-full">
-            <h2 className="text-2xl font-bold text-red-600 mb-4">Bir hata oluştu</h2>
-            <p className="text-gray-700 dark:text-gray-300 mb-4">
-              Uygulama beklenmeyen bir hatayla karşılaştı.
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 dark:from-gray-900 dark:via-gray-800 dark:to-slate-900 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-8 max-w-md w-full text-center border border-red-200 dark:border-red-900">
+            <div className="flex justify-center mb-4">
+              <div className="p-4 bg-red-100 dark:bg-red-900/30 rounded-full">
+                <AlertTriangle className="text-red-600 dark:text-red-400" size={48} />
+              </div>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+              Bir şeyler ters gitti
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              Üzgünüz, bir hata oluştu. Lütfen sayfayı yenileyin.
             </p>
             {this.state.error && (
-              <pre className="bg-gray-100 dark:bg-gray-900 p-4 rounded text-sm overflow-auto mb-4">
+              <div className="text-xs text-left p-3 bg-red-50 dark:bg-red-900/20 rounded-lg mb-4 font-mono text-red-800 dark:text-red-300 overflow-auto">
                 {this.state.error.message}
-              </pre>
+              </div>
             )}
             <button
               onClick={() => window.location.reload()}
-              className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-lg hover:shadow-xl hover:scale-105"
             >
               Sayfayı Yenile
             </button>
