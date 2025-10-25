@@ -147,24 +147,29 @@ export async function fetchCryptoPrice(symbol: string): Promise<number | null> {
 }
 
 export async function fetchCryptoFromCoinGecko(symbol: string): Promise<number | null> {
-  if (!canMakeRequest('coingecko')) {
-    await waitForRateLimit('coingecko');
-  }
-
+  // Use Binance instead of CoinGecko for better reliability
   try {
-    const coinId = COINGECKO_IDS[symbol];
-    if (!coinId) return null;
+    if (!canMakeRequest('binance')) {
+      await waitForRateLimit('binance');
+    }
 
-    const response = await fetch(
-      `${COINGECKO_API}/simple/price?ids=${coinId}&vs_currencies=try`
-    );
+    const binanceSymbol = CRYPTO_MAP[symbol];
+    if (!binanceSymbol) return null;
 
-    if (!response.ok) throw new Error('CoinGecko API failed');
+    const response = await fetch(`${BINANCE_API}?symbol=${binanceSymbol}`);
+    if (!response.ok) throw new Error('Binance API failed');
 
     const data = await response.json();
-    return data[coinId]?.try || null;
+    const priceUSD = parseFloat(data.price);
+
+    // Convert to TRY
+    const usdTryRate = await fetchUSDTRYRate();
+    const priceTRY = priceUSD * usdTryRate;
+
+    console.log(`💰 ${symbol}: $${priceUSD} → ${priceTRY.toFixed(2)} ₺`);
+    return priceTRY;
   } catch (error) {
-    console.error(`Error fetching from CoinGecko for ${symbol}:`, error);
+    console.error(`Error fetching from Binance for ${symbol}:`, error);
     return null;
   }
 }
