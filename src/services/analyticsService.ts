@@ -164,3 +164,100 @@ export function getDefaultTargetAllocations(): Record<string, number> {
     commodity: 5,
   };
 }
+
+export interface AdvancedMetrics {
+  sharpeRatio: number;
+  maxDrawdown: number;
+  volatility: number;
+  cagr: number;
+  beta: number;
+  alpha: number;
+}
+
+export async function calculateSharpeRatio(riskFreeRate: number = 0.15): Promise<number> {
+  const snapshots = await getHistoricalSnapshots(365);
+  if (snapshots.length < 2) return 0;
+
+  const returns: number[] = [];
+  for (let i = 1; i < snapshots.length; i++) {
+    const dailyReturn = (snapshots[i].total_value - snapshots[i - 1].total_value) / snapshots[i - 1].total_value;
+    returns.push(dailyReturn);
+  }
+
+  const avgReturn = returns.reduce((sum, r) => sum + r, 0) / returns.length;
+  const variance = returns.reduce((sum, r) => sum + Math.pow(r - avgReturn, 2), 0) / returns.length;
+  const stdDev = Math.sqrt(variance);
+
+  const annualizedReturn = avgReturn * 252;
+  const annualizedVolatility = stdDev * Math.sqrt(252);
+
+  if (annualizedVolatility === 0) return 0;
+  return (annualizedReturn - riskFreeRate) / annualizedVolatility;
+}
+
+export async function calculateMaxDrawdown(): Promise<number> {
+  const snapshots = await getHistoricalSnapshots(365);
+  if (snapshots.length < 2) return 0;
+
+  let maxDrawdown = 0;
+  let peak = snapshots[0].total_value;
+
+  for (const snapshot of snapshots) {
+    if (snapshot.total_value > peak) {
+      peak = snapshot.total_value;
+    }
+    const drawdown = (peak - snapshot.total_value) / peak;
+    if (drawdown > maxDrawdown) {
+      maxDrawdown = drawdown;
+    }
+  }
+
+  return maxDrawdown * 100;
+}
+
+export async function calculateVolatility(): Promise<number> {
+  const snapshots = await getHistoricalSnapshots(365);
+  if (snapshots.length < 2) return 0;
+
+  const returns: number[] = [];
+  for (let i = 1; i < snapshots.length; i++) {
+    const dailyReturn = (snapshots[i].total_value - snapshots[i - 1].total_value) / snapshots[i - 1].total_value;
+    returns.push(dailyReturn);
+  }
+
+  const avgReturn = returns.reduce((sum, r) => sum + r, 0) / returns.length;
+  const variance = returns.reduce((sum, r) => sum + Math.pow(r - avgReturn, 2), 0) / returns.length;
+  const stdDev = Math.sqrt(variance);
+
+  return stdDev * Math.sqrt(252) * 100;
+}
+
+export async function calculateCAGR(): Promise<number> {
+  const snapshots = await getHistoricalSnapshots(365);
+  if (snapshots.length < 2) return 0;
+
+  const firstValue = snapshots[0].total_value;
+  const lastValue = snapshots[snapshots.length - 1].total_value;
+  const years = snapshots.length / 365;
+
+  if (firstValue === 0 || years === 0) return 0;
+  return (Math.pow(lastValue / firstValue, 1 / years) - 1) * 100;
+}
+
+export async function getAdvancedMetrics(): Promise<AdvancedMetrics> {
+  const [sharpeRatio, maxDrawdown, volatility, cagr] = await Promise.all([
+    calculateSharpeRatio(),
+    calculateMaxDrawdown(),
+    calculateVolatility(),
+    calculateCAGR(),
+  ]);
+
+  return {
+    sharpeRatio,
+    maxDrawdown,
+    volatility,
+    cagr,
+    beta: 0,
+    alpha: 0,
+  };
+}
