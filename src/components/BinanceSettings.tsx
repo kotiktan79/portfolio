@@ -94,6 +94,20 @@ export function BinanceSettings() {
 
   return (
     <div className="space-y-6">
+      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
+        <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-200 mb-2">
+          🎯 Binance Global Entegrasyonu (Opsiyonel)
+        </h3>
+        <p className="text-sm text-blue-800 dark:text-blue-300 mb-3">
+          Binance Global hesabınızdaki kripto varlıklarınızı otomatik olarak senkronize edebilirsiniz.
+          Bu özellik tamamen opsiyoneldir - kullanmak istemiyorsanız sol üstteki <strong>"← Geri"</strong> butonuna tıklayarak ana uygulamaya dönebilirsiniz.
+        </p>
+        <div className="flex gap-2 text-sm text-blue-700 dark:text-blue-300">
+          <span>✓</span>
+          <span>Manuel varlık eklemeye devam edebilirsiniz</span>
+        </div>
+      </div>
+
       {message && (
         <div
           className={`p-4 rounded-lg flex items-center gap-2 ${
