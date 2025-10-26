@@ -1,4 +1,5 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { Component, ReactNode } from 'react';
+import { AlertTriangle } from 'lucide-react';
 
 interface Props {
   children: ReactNode;
@@ -6,40 +7,47 @@ interface Props {
 
 interface State {
   hasError: boolean;
-  error: Error | null;
+  error?: Error;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
-  public state: State = {
-    hasError: false,
-    error: null,
-  };
+  constructor(props: Props) {
+    super(props);
+    this.state = { hasError: false };
+  }
 
-  public static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
   }
 
-  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Uncaught error:', error, errorInfo);
+  componentDidCatch(error: Error, errorInfo: any) {
+    console.error('Error caught by boundary:', error, errorInfo);
   }
 
-  public render() {
+  render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
-          <div className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg max-w-md">
-            <h1 className="text-2xl font-bold text-red-600 mb-4">Bir hata oluştu</h1>
-            <p className="text-gray-700 dark:text-gray-300 mb-4">
-              Üzgünüz, bir şeyler yanlış gitti. Lütfen sayfayı yenileyin.
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 dark:from-gray-900 dark:via-gray-800 dark:to-slate-900 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-8 max-w-md w-full text-center border border-red-200 dark:border-red-900">
+            <div className="flex justify-center mb-4">
+              <div className="p-4 bg-red-100 dark:bg-red-900/30 rounded-full">
+                <AlertTriangle className="text-red-600 dark:text-red-400" size={48} />
+              </div>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+              Bir şeyler ters gitti
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              Üzgünüz, bir hata oluştu. Lütfen sayfayı yenileyin.
             </p>
             {this.state.error && (
-              <pre className="text-sm bg-gray-100 dark:bg-gray-700 p-4 rounded overflow-auto">
-                {this.state.error.toString()}
-              </pre>
+              <div className="text-xs text-left p-3 bg-red-50 dark:bg-red-900/20 rounded-lg mb-4 font-mono text-red-800 dark:text-red-300 overflow-auto">
+                {this.state.error.message}
+              </div>
             )}
             <button
               onClick={() => window.location.reload()}
-              className="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-lg hover:shadow-xl hover:scale-105"
             >
               Sayfayı Yenile
             </button>
