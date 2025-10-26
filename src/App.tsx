@@ -5,33 +5,31 @@ import { AddHoldingModal } from './components/AddHoldingModal';
 import { EditHoldingModal } from './components/EditHoldingModal';
 import { HoldingRow } from './components/HoldingRow';
 import { PnLCard } from './components/PnLCard';
+import { RebalanceModal } from './components/RebalanceModal';
 import { PortfolioChart } from './components/PortfolioChart';
 import { AllocationChart } from './components/AllocationChart';
-import {
-  RebalanceModal,
-  TransactionHistory,
-  AchievementBadges,
-  PriceAlertModal,
-  RiskMetrics,
-  ScenarioAnalysis,
-  ProfitSummary,
-  WithdrawalCalculator,
-  ExportImportModal,
-  HoldingsFilter,
-  TradingSignals,
-  AdvancedChart,
-  BackupRestore,
-  AIPortfolioSuggestions,
-  MultiBenchmark,
-  AdvancedAnalytics,
-  CashDashboard,
-  Security2FA,
-  LanguageSwitcher,
-  AutoRebalanceSettings,
-  PerformanceDashboard,
-  AssetAllocationPage
-} from './components/stub-components';
+import { TransactionHistory } from './components/TransactionHistory';
+import { AchievementBadges } from './components/AchievementBadges';
+import { PriceAlertModal } from './components/PriceAlertModal';
+import { RiskMetrics } from './components/RiskMetrics';
+import { ScenarioAnalysis } from './components/ScenarioAnalysis';
+import { ProfitSummary } from './components/ProfitSummary';
+import { WithdrawalCalculator } from './components/WithdrawalCalculator';
+import { ExportImportModal } from './components/ExportImportModal';
+import { HoldingsFilter } from './components/HoldingsFilter';
+import { TradingSignals } from './components/TradingSignals';
 import { ToastContainer } from './components/Toast';
+import { AdvancedChart } from './components/AdvancedChart';
+import { BackupRestore } from './components/BackupRestore';
+import { AIPortfolioSuggestions } from './components/AIPortfolioSuggestions';
+import { MultiBenchmark } from './components/MultiBenchmark';
+import { AdvancedAnalytics } from './components/AdvancedAnalytics';
+import { CashDashboard } from './components/CashDashboard';
+import { Security2FA } from './components/Security2FA';
+import { LanguageSwitcher } from './components/LanguageSwitcher';
+import { AutoRebalanceSettings } from './components/AutoRebalanceSettings';
+import { PerformanceDashboard } from './components/PerformanceDashboard';
+import { AssetAllocationPage } from './components/AssetAllocationPage';
 import ComprehensiveAnalytics from './components/ComprehensiveAnalytics';
 import { BinanceSettings } from './components/BinanceSettings';
 import { useToast } from './hooks/useToast';
@@ -110,7 +108,7 @@ function App() {
     });
 
     const unsubscribePrices = subscribeToPriceUpdates((update: PriceUpdate) => {
-      setLastUpdate(`${update.symbol}: ${formatCurrency(update.price)}`);
+      setLastUpdate(`${update.symbol}: ${formatCurrency(update.price)} ₺ (${update.source})`);
 
       setHoldings(prev =>
         prev.map(h =>
@@ -167,18 +165,34 @@ function App() {
       (sum, h) => sum + h.current_price * h.quantity,
       0
     );
-    const totalInvestment = holdings.reduce(
-      (sum, h) => sum + h.purchase_price * h.quantity,
-      0
-    );
 
-    const pnl = currentTotalValue - totalInvestment;
-    const pnlPercentage = totalInvestment > 0 ? (pnl / totalInvestment) * 100 : 0;
+    const dailyBase = pnlData.daily.value - pnlData.daily.change;
+    const weeklyBase = pnlData.weekly.value - pnlData.weekly.change;
+    const monthlyBase = pnlData.monthly.value - pnlData.monthly.change;
+
+    const dailyChange = currentTotalValue - dailyBase;
+    const weeklyChange = currentTotalValue - weeklyBase;
+    const monthlyChange = currentTotalValue - monthlyBase;
 
     setLivePnlData({
-      daily: { totalValue: currentTotalValue, totalInvestment, pnl, pnlPercentage },
-      weekly: { totalValue: currentTotalValue, totalInvestment, pnl, pnlPercentage },
-      monthly: { totalValue: currentTotalValue, totalInvestment, pnl, pnlPercentage },
+      daily: {
+        period: 'Günlük',
+        value: currentTotalValue,
+        change: dailyChange,
+        percentage: dailyBase > 0 ? (dailyChange / dailyBase) * 100 : 0,
+      },
+      weekly: {
+        period: 'Haftalık',
+        value: currentTotalValue,
+        change: weeklyChange,
+        percentage: weeklyBase > 0 ? (weeklyChange / weeklyBase) * 100 : 0,
+      },
+      monthly: {
+        period: 'Aylık',
+        value: currentTotalValue,
+        change: monthlyChange,
+        percentage: monthlyBase > 0 ? (monthlyChange / monthlyBase) * 100 : 0,
+      },
     });
   }
 
@@ -196,7 +210,13 @@ function App() {
       if (data && data.length > 0) {
         updatePricesForHoldings(data);
 
-        initializeWebSocketConnection();
+        const cryptoSymbols = data
+          .filter(h => h.asset_type === 'crypto')
+          .map(h => h.symbol);
+
+        if (cryptoSymbols.length > 0) {
+          initializeWebSocketConnection(cryptoSymbols);
+        }
       }
     }
     setLoading(false);
@@ -209,7 +229,10 @@ function App() {
 
   async function updatePricesForHoldings(holdingsToUpdate: Holding[]) {
     try {
-      const symbols = holdingsToUpdate.map(h => h.symbol);
+      const symbols = holdingsToUpdate.map(h => ({
+        symbol: h.symbol,
+        assetType: h.asset_type,
+      }));
 
       const prices = await fetchMultiplePrices(symbols);
 
@@ -250,14 +273,12 @@ function App() {
     const pnlPercent = totalInv > 0 ? (pnl / totalInv) * 100 : 0;
 
     await savePortfolioSnapshot(totalValue, totalInv, pnl, pnlPercent);
-    await loadPnLData();
+    const data = await getPnLData();
+    setPnlData(data);
   }
 
   async function loadPnLData() {
-    const daily = await getPnLData('daily');
-    const weekly = await getPnLData('weekly');
-    const monthly = await getPnLData('monthly');
-    const data = { daily, weekly, monthly };
+    const data = await getPnLData();
     setPnlData(data);
     setLivePnlData(data);
   }
@@ -304,76 +325,67 @@ function App() {
     }
   }
 
-  async function handleAddHolding(
-    symbol: string,
-    assetType: AssetType,
-    purchasePrice: number,
-    quantity: number
-  ) {
-    const prices = await fetchMultiplePrices([symbol]);
-    const currentPrice = prices[symbol] || purchasePrice;
-
+  async function handleAddHolding(newHolding: {
+    symbol: string;
+    asset_type: AssetType;
+    purchase_price: number;
+    quantity: number;
+    current_price: number;
+  }) {
     const { data, error } = await supabase
       .from('holdings')
-      .insert([{
-        symbol,
-        asset_type: assetType,
-        purchase_price: purchasePrice,
-        quantity,
-        current_price: currentPrice,
-      }])
+      .insert([newHolding])
       .select()
       .maybeSingle();
 
     if (error) {
       console.error('Error adding holding:', error);
-      toast.show('Varlık eklenirken hata oluştu!', 'error');
+      toast.error('Varlık eklenirken hata oluştu!');
     } else if (data) {
       setHoldings([...holdings, data]);
-      toast.show(`${symbol} başarıyla eklendi!`, 'success');
-      await loadPnLData();
-      await checkAchievements();
+      toast.success(`${newHolding.symbol} başarıyla eklendi!`);
     }
   }
 
   async function handleUpdateHolding(
     id: string,
-    quantity: number,
-    purchasePrice: number
+    updates: {
+      symbol: string;
+      asset_type: AssetType;
+      purchase_price: number;
+      quantity: number;
+    }
   ) {
     const { error } = await supabase
       .from('holdings')
-      .update({
-        quantity,
-        purchase_price: purchasePrice,
-        updated_at: new Date().toISOString()
-      })
+      .update({ ...updates, updated_at: new Date().toISOString() })
       .eq('id', id);
 
     if (error) {
       console.error('Error updating holding:', error);
-      toast.show('Varlık güncellenirken hata oluştu!', 'error');
+      toast.error('Varlık güncellenirken hata oluştu!');
     } else {
       setHoldings(
         holdings.map((h) =>
-          h.id === id ? { ...h, quantity, purchase_price: purchasePrice } : h
+          h.id === id ? { ...h, ...updates } : h
         )
       );
-      toast.show('Varlık başarıyla güncellendi!', 'success');
-      await loadPnLData();
+      toast.success('Varlık başarıyla güncellendi!');
     }
   }
 
   async function handleDeleteHolding(id: string) {
+    const confirmed = window.confirm('Bu varlığı silmek istediğinize emin misiniz?');
+    if (!confirmed) return;
+
     const { error } = await supabase.from('holdings').delete().eq('id', id);
 
     if (error) {
       console.error('Error deleting holding:', error);
-      toast.show('Varlık silinirken hata oluştu!', 'error');
+      toast.error('Varlık silinirken hata oluştu!');
     } else {
       setHoldings(holdings.filter((h) => h.id !== id));
-      toast.show('Varlık başarıyla silindi!', 'success');
-      await loadPnLData();
+      toast.success('Varlık başarıyla silindi!');
     }
   }
 

@@ -12,9 +12,21 @@ interface BinanceAccount {
 
 export async function saveBinanceApiKeys(apiKey: string, apiSecret: string): Promise<boolean> {
   try {
-    localStorage.setItem('binance_api_key', apiKey);
-    localStorage.setItem('binance_api_secret', apiSecret);
-    localStorage.setItem('binance_keys_saved_at', new Date().toISOString());
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    const { error } = await supabase
+      .from('binance_api_keys')
+      .upsert({
+        user_id: user.id,
+        exchange: 'binance_global',
+        api_key: apiKey,
+        api_secret: apiSecret,
+        is_active: true,
+        updated_at: new Date().toISOString(),
+      });
+
+    if (error) throw error;
     return true;
   } catch (error) {
     console.error('Error saving API keys:', error);
@@ -24,12 +36,23 @@ export async function saveBinanceApiKeys(apiKey: string, apiSecret: string): Pro
 
 export async function getBinanceApiKeys(): Promise<{ apiKey: string; apiSecret: string } | null> {
   try {
-    const apiKey = localStorage.getItem('binance_api_key');
-    const apiSecret = localStorage.getItem('binance_api_secret');
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
 
-    if (!apiKey || !apiSecret) return null;
+    const { data, error } = await supabase
+      .from('binance_api_keys')
+      .select('api_key, api_secret')
+      .eq('user_id', user.id)
+      .eq('exchange', 'binance_global')
+      .eq('is_active', true)
+      .maybeSingle();
 
-    return { apiKey, apiSecret };
+    if (error || !data) return null;
+
+    return {
+      apiKey: data.api_key,
+      apiSecret: data.api_secret,
+    };
   } catch (error) {
     console.error('Error fetching API keys:', error);
     return null;
@@ -58,9 +81,12 @@ async function createBinanceSignature(queryString: string, apiSecret: string): P
 
 export async function syncBinanceGlobalBalances(): Promise<{ success: boolean; message: string; assetsCount?: number }> {
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
     const keys = await getBinanceApiKeys();
     if (!keys) {
-      return { success: false, message: 'Binance API anahtarları bulunamadı. Lütfen önce ekleyin.' };
+      return { success: false, message: 'Binance API keys not found. Please add them first.' };
     }
 
     const timestamp = Date.now();
@@ -90,37 +116,76 @@ export async function syncBinanceGlobalBalances(): Promise<{ success: boolean; m
 
     const cryptoPrices = await fetchBinancePrices(nonZeroBalances.map(b => b.asset));
 
-    const balancesData = nonZeroBalances.map(balance => {
+    for (const balance of nonZeroBalances) {
       const free = parseFloat(balance.free);
       const locked = parseFloat(balance.locked);
       const total = free + locked;
+
       const priceUSDT = cryptoPrices[balance.asset] || 0;
       const usdValue = total * priceUSDT * usdtPrice;
 
-      return {
-        id: `${balance.asset}-${Date.now()}`,
-        symbol: balance.asset,
-        free,
-        locked,
-        total,
-        usd_value: usdValue,
-        synced_at: new Date().toISOString(),
-      };
-    });
+      const { error: balanceError } = await supabase
+        .from('binance_balances')
+        .upsert({
+          user_id: user.id,
+          exchange: 'binance_global',
+          symbol: balance.asset,
+          free,
+          locked,
+          total,
+          usd_value: usdValue,
+          synced_at: new Date().toISOString(),
+        });
 
-    localStorage.setItem('binance_balances', JSON.stringify(balancesData));
-    localStorage.setItem('binance_last_sync', new Date().toISOString());
+      if (balanceError) {
+        console.error(`Error saving balance for ${balance.asset}:`, balanceError);
+      }
+    }
+
+    const { error: updateError } = await supabase
+      .from('binance_api_keys')
+      .update({ last_sync: new Date().toISOString() })
+      .eq('user_id', user.id)
+      .eq('exchange', 'binance_global');
+
+    if (updateError) console.error('Error updating last sync:', updateError);
+
+    await supabase.from('sync_history').insert({
+      user_id: user.id,
+      exchange: 'binance_global',
+      sync_type: 'manual',
+      status: 'success',
+      assets_synced: nonZeroBalances.length,
+      synced_at: new Date().toISOString(),
+    });
 
     return {
       success: true,
-      message: `Binance Global'den ${nonZeroBalances.length} varlık başarıyla senkronize edildi`,
+      message: `Successfully synced ${nonZeroBalances.length} assets from Binance Global`,
       assetsCount: nonZeroBalances.length
     };
   } catch (error: any) {
     console.error('Binance sync error:', error);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('sync_history').insert({
+          user_id: user.id,
+          exchange: 'binance_global',
+          sync_type: 'manual',
+          status: 'failed',
+          error_message: error.message,
+          synced_at: new Date().toISOString(),
+        });
+      }
+    } catch (logError) {
+      console.error('Error logging sync failure:', logError);
+    }
+
     return {
       success: false,
-      message: error.message || 'Binance verisi senkronize edilemedi'
+      message: error.message || 'Failed to sync Binance data'
     };
   }
 }
@@ -173,11 +238,18 @@ async function fetchUSDTRYRate(): Promise<number> {
 
 export async function getBinanceBalances(): Promise<any[]> {
   try {
-    const balancesStr = localStorage.getItem('binance_balances');
-    if (!balancesStr) return [];
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return [];
 
-    const balances = JSON.parse(balancesStr);
-    return balances.sort((a: any, b: any) => b.usd_value - a.usd_value);
+    const { data, error } = await supabase
+      .from('binance_balances')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('exchange', 'binance_global')
+      .order('usd_value', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
   } catch (error) {
     console.error('Error fetching Binance balances:', error);
     return [];
@@ -186,7 +258,18 @@ export async function getBinanceBalances(): Promise<any[]> {
 
 export async function getLastSyncTime(): Promise<string | null> {
   try {
-    return localStorage.getItem('binance_last_sync');
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    const { data, error } = await supabase
+      .from('binance_api_keys')
+      .select('last_sync')
+      .eq('user_id', user.id)
+      .eq('exchange', 'binance_global')
+      .maybeSingle();
+
+    if (error || !data) return null;
+    return data.last_sync;
   } catch (error) {
     console.error('Error fetching last sync time:', error);
     return null;
@@ -199,12 +282,16 @@ export async function addBinanceAssetToPortfolio(
   avgPrice: number
 ): Promise<boolean> {
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
     const assetType = 'crypto';
     const currentPrice = await fetchCurrentPrice(symbol);
 
     const { error } = await supabase
       .from('holdings')
       .insert({
+        user_id: user.id,
         symbol,
         asset_type: assetType,
         quantity,
