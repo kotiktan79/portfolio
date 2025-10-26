@@ -441,15 +441,18 @@ function App() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4">
         <div className="max-w-4xl mx-auto">
-          <div className="mb-6 flex items-center justify-between">
+          <div className="mb-6">
             <button
               onClick={() => setShowBinanceSettings(false)}
-              className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors shadow-md"
+              className="flex items-center gap-3 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-lg text-lg font-semibold mb-4"
             >
-              ← Geri
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Ana Uygulamaya Dön
             </button>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Binance Global Entegrasyonu</h1>
-            <div></div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Binance Global Entegrasyonu</h1>
+            <p className="text-gray-600 dark:text-gray-400">Binance hesabınızı bağlamak istemiyorsanız yukarıdaki butona tıklayın</p>
           </div>
           <BinanceSettings />
         </div>
