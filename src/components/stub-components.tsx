@@ -45,8 +45,8 @@ export function ProfitSummary() {
   return <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6"><h3 className="text-lg font-semibold dark:text-white">Kar Özeti</h3></div>;
 }
 
-export function WithdrawalCalculator() {
-  return <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6"><h3 className="text-lg font-semibold dark:text-white">Çekim Hesaplayıcı</h3></div>;
+export function WithdrawalCalculator({ holdings }: any) {
+  return <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6"><h3 className="text-lg font-semibold dark:text-white">Çekim Hesaplayıcı</h3><p className="text-gray-500 dark:text-gray-400 mt-2">{holdings?.length || 0} varlık</p></div>;
 }
 
 export function ExportImportModal({ onClose }: { onClose: () => void }) {
@@ -60,16 +60,39 @@ export function ExportImportModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-export function HoldingsFilter({ searchQuery, setSearchQuery, selectedAssetType, setSelectedAssetType, sortBy, setSortBy, sortOrder, setSortOrder }: any) {
+export function HoldingsFilter({
+  searchQuery,
+  onSearchChange,
+  selectedType,
+  onTypeChange,
+  sortBy,
+  onSortChange,
+  sortOrder,
+  onSortOrderChange
+}: any) {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 mb-4">
-      <input
-        type="text"
-        placeholder="Ara..."
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:text-white dark:border-gray-600"
-      />
+      <div className="flex flex-col md:flex-row gap-4">
+        <input
+          type="text"
+          placeholder="Varlık ara..."
+          value={searchQuery}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="flex-1 px-4 py-2 border rounded-lg dark:bg-gray-700 dark:text-white dark:border-gray-600"
+        />
+        <select
+          value={selectedType}
+          onChange={(e) => onTypeChange(e.target.value)}
+          className="px-4 py-2 border rounded-lg dark:bg-gray-700 dark:text-white dark:border-gray-600"
+        >
+          <option value="all">Tüm Varlıklar</option>
+          <option value="stock">Hisse</option>
+          <option value="crypto">Kripto</option>
+          <option value="commodity">Emtia</option>
+          <option value="forex">Döviz</option>
+          <option value="fund">Fon</option>
+        </select>
+      </div>
     </div>
   );
 }

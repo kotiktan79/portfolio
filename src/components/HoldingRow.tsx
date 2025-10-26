@@ -6,6 +6,8 @@ import { formatCurrency } from '../services/priceService';
 interface HoldingRowProps {
   holding: Holding;
   onEdit: (holding: Holding) => void;
+  onDelete?: (id: string) => void;
+  onTransactionComplete?: () => void;
 }
 
 export function HoldingRow({ holding, onEdit }: HoldingRowProps) {

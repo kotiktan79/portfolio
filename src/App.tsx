@@ -304,67 +304,76 @@ function App() {
     }
   }
 
-  async function handleAddHolding(newHolding: {
-    symbol: string;
-    asset_type: AssetType;
-    purchase_price: number;
-    quantity: number;
-    current_price: number;
-  }) {
+  async function handleAddHolding(
+    symbol: string,
+    assetType: AssetType,
+    purchasePrice: number,
+    quantity: number
+  ) {
+    const prices = await fetchMultiplePrices([symbol]);
+    const currentPrice = prices[symbol] || purchasePrice;
+
     const { data, error } = await supabase
       .from('holdings')
-      .insert([newHolding])
+      .insert([{
+        symbol,
+        asset_type: assetType,
+        purchase_price: purchasePrice,
+        quantity,
+        current_price: currentPrice,
+      }])
       .select()
       .maybeSingle();
 
     if (error) {
       console.error('Error adding holding:', error);
-      toast.error('Varlık eklenirken hata oluştu!');
+      toast.show('Varlık eklenirken hata oluştu!', 'error');
     } else if (data) {
       setHoldings([...holdings, data]);
-      toast.success(`${newHolding.symbol} başarıyla eklendi!`);
+      toast.show(`${symbol} başarıyla eklendi!`, 'success');
+      await loadPnLData();
+      await checkAchievements();
     }
   }
 
   async function handleUpdateHolding(
     id: string,
-    updates: {
-      symbol: string;
-      asset_type: AssetType;
-      purchase_price: number;
-      quantity: number;
-    }
+    quantity: number,
+    purchasePrice: number
   ) {
     const { error } = await supabase
       .from('holdings')
-      .update({ ...updates, updated_at: new Date().toISOString() })
+      .update({
+        quantity,
+        purchase_price: purchasePrice,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', id);
 
     if (error) {
       console.error('Error updating holding:', error);
-      toast.error('Varlık güncellenirken hata oluştu!');
+      toast.show('Varlık güncellenirken hata oluştu!', 'error');
     } else {
       setHoldings(
         holdings.map((h) =>
-          h.id === id ? { ...h, ...updates } : h
+          h.id === id ? { ...h, quantity, purchase_price: purchasePrice } : h
         )
       );
-      toast.success('Varlık başarıyla güncellendi!');
+      toast.show('Varlık başarıyla güncellendi!', 'success');
+      await loadPnLData();
     }
   }
 
   async function handleDeleteHolding(id: string) {
-    const confirmed = window.confirm('Bu varlığı silmek istediğinize emin misiniz?');
-    if (!confirmed) return;
-
     const { error } = await supabase.from('holdings').delete().eq('id', id);
 
     if (error) {
       console.error('Error deleting holding:', error);
-      toast.error('Varlık silinirken hata oluştu!');
+      toast.show('Varlık silinirken hata oluştu!', 'error');
     } else {
       setHoldings(holdings.filter((h) => h.id !== id));
-      toast.success('Varlık başarıyla silindi!');
+      toast.show('Varlık başarıyla silindi!', 'success');
+      await loadPnLData();
     }
   }
 
