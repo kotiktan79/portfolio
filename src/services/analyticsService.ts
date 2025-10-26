@@ -81,9 +81,9 @@ export async function getPnLData(): Promise<{
   }
 
   const current = snapshots[0];
-  const yesterday = snapshots.find((_s, i) => i >= 1);
-  const lastWeek = snapshots.find((_s, i) => i >= 7);
-  const lastMonth = snapshots.find((_s, i) => i >= 30);
+  const yesterday = snapshots[1];
+  const lastWeek = snapshots[7];
+  const lastMonth = snapshots[30];
 
   const calculateChange = (
     current: PortfolioSnapshot,
