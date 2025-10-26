@@ -5,31 +5,33 @@ import { AddHoldingModal } from './components/AddHoldingModal';
 import { EditHoldingModal } from './components/EditHoldingModal';
 import { HoldingRow } from './components/HoldingRow';
 import { PnLCard } from './components/PnLCard';
-import { RebalanceModal } from './components/RebalanceModal';
 import { PortfolioChart } from './components/PortfolioChart';
 import { AllocationChart } from './components/AllocationChart';
-import { TransactionHistory } from './components/TransactionHistory';
-import { AchievementBadges } from './components/AchievementBadges';
-import { PriceAlertModal } from './components/PriceAlertModal';
-import { RiskMetrics } from './components/RiskMetrics';
-import { ScenarioAnalysis } from './components/ScenarioAnalysis';
-import { ProfitSummary } from './components/ProfitSummary';
-import { WithdrawalCalculator } from './components/WithdrawalCalculator';
-import { ExportImportModal } from './components/ExportImportModal';
-import { HoldingsFilter } from './components/HoldingsFilter';
-import { TradingSignals } from './components/TradingSignals';
+import {
+  RebalanceModal,
+  TransactionHistory,
+  AchievementBadges,
+  PriceAlertModal,
+  RiskMetrics,
+  ScenarioAnalysis,
+  ProfitSummary,
+  WithdrawalCalculator,
+  ExportImportModal,
+  HoldingsFilter,
+  TradingSignals,
+  AdvancedChart,
+  BackupRestore,
+  AIPortfolioSuggestions,
+  MultiBenchmark,
+  AdvancedAnalytics,
+  CashDashboard,
+  Security2FA,
+  LanguageSwitcher,
+  AutoRebalanceSettings,
+  PerformanceDashboard,
+  AssetAllocationPage
+} from './components/stub-components';
 import { ToastContainer } from './components/Toast';
-import { AdvancedChart } from './components/AdvancedChart';
-import { BackupRestore } from './components/BackupRestore';
-import { AIPortfolioSuggestions } from './components/AIPortfolioSuggestions';
-import { MultiBenchmark } from './components/MultiBenchmark';
-import { AdvancedAnalytics } from './components/AdvancedAnalytics';
-import { CashDashboard } from './components/CashDashboard';
-import { Security2FA } from './components/Security2FA';
-import { LanguageSwitcher } from './components/LanguageSwitcher';
-import { AutoRebalanceSettings } from './components/AutoRebalanceSettings';
-import { PerformanceDashboard } from './components/PerformanceDashboard';
-import { AssetAllocationPage } from './components/AssetAllocationPage';
 import ComprehensiveAnalytics from './components/ComprehensiveAnalytics';
 import { BinanceSettings } from './components/BinanceSettings';
 import { useToast } from './hooks/useToast';
@@ -108,7 +110,7 @@ function App() {
     });
 
     const unsubscribePrices = subscribeToPriceUpdates((update: PriceUpdate) => {
-      setLastUpdate(`${update.symbol}: ${formatCurrency(update.price)} ₺ (${update.source})`);
+      setLastUpdate(`${update.symbol}: ${formatCurrency(update.price)}`);
 
       setHoldings(prev =>
         prev.map(h =>
@@ -165,34 +167,18 @@ function App() {
       (sum, h) => sum + h.current_price * h.quantity,
       0
     );
+    const totalInvestment = holdings.reduce(
+      (sum, h) => sum + h.purchase_price * h.quantity,
+      0
+    );
 
-    const dailyBase = pnlData.daily.value - pnlData.daily.change;
-    const weeklyBase = pnlData.weekly.value - pnlData.weekly.change;
-    const monthlyBase = pnlData.monthly.value - pnlData.monthly.change;
-
-    const dailyChange = currentTotalValue - dailyBase;
-    const weeklyChange = currentTotalValue - weeklyBase;
-    const monthlyChange = currentTotalValue - monthlyBase;
+    const pnl = currentTotalValue - totalInvestment;
+    const pnlPercentage = totalInvestment > 0 ? (pnl / totalInvestment) * 100 : 0;
 
     setLivePnlData({
-      daily: {
-        period: 'Günlük',
-        value: currentTotalValue,
-        change: dailyChange,
-        percentage: dailyBase > 0 ? (dailyChange / dailyBase) * 100 : 0,
-      },
-      weekly: {
-        period: 'Haftalık',
-        value: currentTotalValue,
-        change: weeklyChange,
-        percentage: weeklyBase > 0 ? (weeklyChange / weeklyBase) * 100 : 0,
-      },
-      monthly: {
-        period: 'Aylık',
-        value: currentTotalValue,
-        change: monthlyChange,
-        percentage: monthlyBase > 0 ? (monthlyChange / monthlyBase) * 100 : 0,
-      },
+      daily: { totalValue: currentTotalValue, totalInvestment, pnl, pnlPercentage },
+      weekly: { totalValue: currentTotalValue, totalInvestment, pnl, pnlPercentage },
+      monthly: { totalValue: currentTotalValue, totalInvestment, pnl, pnlPercentage },
     });
   }
 
@@ -210,13 +196,7 @@ function App() {
       if (data && data.length > 0) {
         updatePricesForHoldings(data);
 
-        const cryptoSymbols = data
-          .filter(h => h.asset_type === 'crypto')
-          .map(h => h.symbol);
-
-        if (cryptoSymbols.length > 0) {
-          initializeWebSocketConnection(cryptoSymbols);
-        }
+        initializeWebSocketConnection();
       }
     }
     setLoading(false);
@@ -229,10 +209,7 @@ function App() {
 
   async function updatePricesForHoldings(holdingsToUpdate: Holding[]) {
     try {
-      const symbols = holdingsToUpdate.map(h => ({
-        symbol: h.symbol,
-        assetType: h.asset_type,
-      }));
+      const symbols = holdingsToUpdate.map(h => h.symbol);
 
       const prices = await fetchMultiplePrices(symbols);
 
@@ -273,12 +250,14 @@ function App() {
     const pnlPercent = totalInv > 0 ? (pnl / totalInv) * 100 : 0;
 
     await savePortfolioSnapshot(totalValue, totalInv, pnl, pnlPercent);
-    const data = await getPnLData();
-    setPnlData(data);
+    await loadPnLData();
   }
 
   async function loadPnLData() {
-    const data = await getPnLData();
+    const daily = await getPnLData('daily');
+    const weekly = await getPnLData('weekly');
+    const monthly = await getPnLData('monthly');
+    const data = { daily, weekly, monthly };
     setPnlData(data);
     setLivePnlData(data);
   }
