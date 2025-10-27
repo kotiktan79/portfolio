@@ -227,7 +227,15 @@ function App() {
 
   async function updatePricesForHoldings(holdingsToUpdate: Holding[]) {
     try {
-      const symbols = holdingsToUpdate.map(h => ({
+      const holdingsToAutoUpdate = holdingsToUpdate.filter(
+        h => h.asset_type !== 'fund' && h.asset_type !== 'eurobond'
+      );
+
+      if (holdingsToAutoUpdate.length === 0) {
+        return;
+      }
+
+      const symbols = holdingsToAutoUpdate.map(h => ({
         symbol: h.symbol,
         assetType: h.asset_type,
       }));
@@ -235,6 +243,10 @@ function App() {
       const prices = await fetchMultiplePrices(symbols);
 
       const updates = holdingsToUpdate.map(async (holding) => {
+        if (holding.asset_type === 'fund' || holding.asset_type === 'eurobond') {
+          return holding;
+        }
+
         const newPrice = prices[holding.symbol];
         if (newPrice && Math.abs(newPrice - holding.current_price) > 0.01) {
           await supabase
