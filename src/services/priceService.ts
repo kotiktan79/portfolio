@@ -154,7 +154,7 @@ export async function fetchCryptoFromCoinGecko(symbol: string): Promise<number |
       await waitForRateLimit('binance');
     }
 
-    const binanceSymbol = CRYPTO_MAP[symbol];
+    const binanceSymbol = CRYPTO_SYMBOLS[symbol];
     if (!binanceSymbol) return null;
 
     const response = await fetch(`${BINANCE_API}?symbol=${binanceSymbol}`);
@@ -425,6 +425,7 @@ export async function fetchFromFinnhub(symbol: string, tickerSymbol: string): Pr
 export async function fetchBISTPrice(symbol: string): Promise<number | null> {
   try {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://jsqsfkyyopjfloxsqrbs.supabase.co';
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzcXNma3l5b3BqZmxveHNxcmJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjExNjc2MjAsImV4cCI6MjA3Njc0MzYyMH0.9d2gqIFCqXfPT72OjwARQOYuxjYCcy3bOK8FHII2ak8';
     const response = await fetch(
       `${supabaseUrl}/functions/v1/bist-live-prices?symbols=${symbol}`,
       {
@@ -840,6 +841,7 @@ export async function fetchMultiplePrices(symbols: { symbol: string; assetType: 
   if (bistStocks.length > 0) {
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://jsqsfkyyopjfloxsqrbs.supabase.co';
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzcXNma3l5b3BqZmxveHNxcmJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjExNjc2MjAsImV4cCI6MjA3Njc0MzYyMH0.9d2gqIFCqXfPT72OjwARQOYuxjYCcy3bOK8FHII2ak8';
       const symbolList = bistStocks.map(s => s.symbol).join(',');
       const response = await fetch(
         `${supabaseUrl}/functions/v1/price-proxy?type=bist&symbols=${symbolList}`,
