@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { X, DollarSign } from 'lucide-react';
+import { X, DollarSign, Info } from 'lucide-react';
 
 interface ManualPriceUpdateModalProps {
   isOpen: boolean;
   onClose: () => void;
   symbol: string;
   currentPrice: number;
-  onUpdatePrice: (symbol: string, newPrice: number) => Promise<void>;
+  onUpdatePrice: (symbol: string, newPrice: number, notes?: string) => Promise<void>;
 }
 
 export function ManualPriceUpdateModal({
@@ -17,6 +17,7 @@ export function ManualPriceUpdateModal({
   onUpdatePrice,
 }: ManualPriceUpdateModalProps) {
   const [price, setPrice] = useState(currentPrice.toString());
+  const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen) return null;
@@ -32,7 +33,7 @@ export function ManualPriceUpdateModal({
 
     setIsSubmitting(true);
     try {
-      await onUpdatePrice(symbol, newPrice);
+      await onUpdatePrice(symbol, newPrice, notes);
       onClose();
     } catch (error) {
       console.error('Price update failed:', error);
@@ -101,10 +102,27 @@ export function ManualPriceUpdateModal({
             </div>
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Not (Opsiyonel)
+            </label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white resize-none"
+              placeholder="Fiyat kaynağı veya notlar (ör: 'Bloomberg terminal', 'Kurumdan alınan rapor')"
+              rows={3}
+            />
+          </div>
+
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-            <p className="text-sm text-blue-800 dark:text-blue-300">
-              Bu fiyat sadece bu varlık için geçerli olacaktır. API'den gelen fiyatlar bu değeri güncellemez.
-            </p>
+            <div className="flex gap-2">
+              <Info size={16} className="text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-blue-800 dark:text-blue-300">
+                <p className="font-medium mb-1">Manuel Fiyat Koruması</p>
+                <p>Bu fiyat manuel olarak işaretlenecek ve otomatik güncellemelerden etkilenmeyecektir.</p>
+              </div>
+            </div>
           </div>
 
           <div className="flex gap-3">

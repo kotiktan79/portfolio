@@ -74,7 +74,7 @@ function DashboardApp() {
   async function updatePricesForHoldings(holdingsToUpdate: Holding[]) {
     try {
       const holdingsToAutoUpdate = holdingsToUpdate.filter(
-        h => h.asset_type !== 'fund' && h.asset_type !== 'eurobond'
+        h => !h.manual_price && h.asset_type !== 'fund' && h.asset_type !== 'eurobond'
       );
 
       if (holdingsToAutoUpdate.length === 0) {
@@ -89,7 +89,7 @@ function DashboardApp() {
       const prices = await fetchMultiplePrices(symbols);
 
       const updates = holdingsToUpdate.map(async (holding) => {
-        if (holding.asset_type === 'fund' || holding.asset_type === 'eurobond') {
+        if (holding.manual_price || holding.asset_type === 'fund' || holding.asset_type === 'eurobond') {
           return holding;
         }
 

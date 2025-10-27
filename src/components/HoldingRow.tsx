@@ -1,5 +1,5 @@
 import { useState, useEffect, memo } from 'react';
-import { Pencil, Trash2, TrendingUp, TrendingDown, Edit3 } from 'lucide-react';
+import { Pencil, Trash2, TrendingUp, TrendingDown, Edit3, Lock } from 'lucide-react';
 import { Holding } from '../lib/supabase';
 import { formatCurrency, formatCurrencyUSD, formatPercentage, getCachedUSDRate } from '../services/priceService';
 import { BuySellModal } from './BuySellModal';
@@ -58,9 +58,31 @@ export const HoldingRow = memo(function HoldingRow({ holding, onEdit, onDelete, 
         </td>
         <td className="px-6 py-4 text-right">
           <div className="flex items-center justify-end gap-2">
-            <span className="font-semibold text-gray-900">
-              {formatCurrency(holding.current_price, 4)}
-            </span>
+            <div className="flex flex-col items-end">
+              <div className="flex items-center gap-1">
+                <span className="font-semibold text-gray-900">
+                  {formatCurrency(holding.current_price, 4)}
+                </span>
+                {holding.manual_price && (
+                  <Lock size={12} className="text-blue-600" title="Manuel Fiyat" />
+                )}
+              </div>
+              {holding.manual_price && holding.manual_price_updated_at && (
+                <span className="text-xs text-blue-600">
+                  {new Date(holding.manual_price_updated_at).toLocaleDateString('tr-TR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </span>
+              )}
+              {holding.price_notes && (
+                <span className="text-xs text-gray-500 italic max-w-[150px] truncate" title={holding.price_notes}>
+                  {holding.price_notes}
+                </span>
+              )}
+            </div>
             {(holding.asset_type === 'fund' || holding.asset_type === 'eurobond') && (
               <button
                 onClick={() => setShowPriceUpdateModal(true)}
@@ -162,11 +184,17 @@ export const HoldingRow = memo(function HoldingRow({ holding, onEdit, onDelete, 
           onClose={() => setShowPriceUpdateModal(false)}
           symbol={holding.symbol}
           currentPrice={holding.current_price}
-          onUpdatePrice={async (_symbol, newPrice) => {
+          onUpdatePrice={async (_symbol, newPrice, notes) => {
             const { supabase } = await import('../lib/supabase');
             const { error } = await supabase
               .from('holdings')
-              .update({ current_price: newPrice })
+              .update({
+                current_price: newPrice,
+                manual_price: true,
+                manual_price_updated_at: new Date().toISOString(),
+                price_notes: notes || null,
+                updated_at: new Date().toISOString()
+              })
               .eq('id', holding.id);
 
             if (error) throw error;

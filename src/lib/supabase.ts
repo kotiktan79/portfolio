@@ -15,6 +15,9 @@ export interface Holding {
   purchase_price: number;
   quantity: number;
   current_price: number;
+  manual_price?: boolean;
+  manual_price_updated_at?: string;
+  price_notes?: string;
   created_at: string;
   updated_at: string;
 }
