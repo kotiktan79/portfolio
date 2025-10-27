@@ -59,6 +59,19 @@ export async function savePortfolioSnapshot(
       },
     ]);
   }
+
+  await cleanupOldSnapshots();
+}
+
+export async function cleanupOldSnapshots() {
+  const cutoffDate = new Date();
+  cutoffDate.setDate(cutoffDate.getDate() - 365);
+  const cutoffStr = cutoffDate.toISOString().split('T')[0];
+
+  await supabase
+    .from('portfolio_snapshots')
+    .delete()
+    .lt('snapshot_date', cutoffStr);
 }
 
 export async function getPnLData(): Promise<{
@@ -260,4 +273,88 @@ export async function getAdvancedMetrics(): Promise<AdvancedMetrics> {
     beta: 0,
     alpha: 0,
   };
+}
+
+export async function updateHoldingPnL(holdingId: string, currentPrice: number, quantity: number, costBasis: number) {
+  const currentValue = currentPrice * quantity;
+  const totalCost = costBasis * quantity;
+  const unrealizedPnl = currentValue - totalCost;
+  const unrealizedPnlPercent = totalCost > 0 ? (unrealizedPnl / totalCost) * 100 : 0;
+
+  await supabase
+    .from('holdings')
+    .update({
+      unrealized_pnl: unrealizedPnl,
+      unrealized_pnl_percent: unrealizedPnlPercent,
+      cost_basis: costBasis,
+    })
+    .eq('id', holdingId);
+}
+
+export interface HoldingPnLDetail {
+  symbol: string;
+  asset_type: string;
+  unrealized_pnl: number;
+  unrealized_pnl_percent: number;
+  realized_pnl: number;
+  total_pnl: number;
+  current_value: number;
+}
+
+export async function getDetailedPnLByAssetType(): Promise<Record<string, HoldingPnLDetail[]>> {
+  const { data: holdings } = await supabase
+    .from('holdings')
+    .select('*');
+
+  if (!holdings) return {};
+
+  const grouped: Record<string, HoldingPnLDetail[]> = {};
+
+  holdings.forEach(h => {
+    const detail: HoldingPnLDetail = {
+      symbol: h.symbol,
+      asset_type: h.asset_type,
+      unrealized_pnl: h.unrealized_pnl || 0,
+      unrealized_pnl_percent: h.unrealized_pnl_percent || 0,
+      realized_pnl: h.total_realized_pnl || 0,
+      total_pnl: (h.unrealized_pnl || 0) + (h.total_realized_pnl || 0),
+      current_value: h.current_price * h.quantity,
+    };
+
+    if (!grouped[h.asset_type]) {
+      grouped[h.asset_type] = [];
+    }
+    grouped[h.asset_type].push(detail);
+  });
+
+  return grouped;
+}
+
+export interface AssetTypePnLSummary {
+  asset_type: string;
+  total_unrealized_pnl: number;
+  total_realized_pnl: number;
+  total_pnl: number;
+  total_value: number;
+  pnl_percent: number;
+}
+
+export async function getPnLSummaryByAssetType(): Promise<AssetTypePnLSummary[]> {
+  const detailed = await getDetailedPnLByAssetType();
+
+  return Object.entries(detailed).map(([assetType, holdings]) => {
+    const totalValue = holdings.reduce((sum, h) => sum + h.current_value, 0);
+    const totalUnrealized = holdings.reduce((sum, h) => sum + h.unrealized_pnl, 0);
+    const totalRealized = holdings.reduce((sum, h) => sum + h.realized_pnl, 0);
+    const totalPnl = totalUnrealized + totalRealized;
+
+    return {
+      asset_type: assetType,
+      total_unrealized_pnl: totalUnrealized,
+      total_realized_pnl: totalRealized,
+      total_pnl: totalPnl,
+      total_value: totalValue,
+      pnl_percent: totalValue > 0 ? (totalUnrealized / (totalValue - totalUnrealized)) * 100 : 0,
+    };
+  }).sort((a, b) => b.total_value - a.total_value);
 }
