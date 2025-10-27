@@ -14,7 +14,6 @@ import { PriceAlertModal } from './components/PriceAlertModal';
 import { RiskMetrics } from './components/RiskMetrics';
 import { ScenarioAnalysis } from './components/ScenarioAnalysis';
 import { ProfitSummary } from './components/ProfitSummary';
-import { PnLBreakdown } from './components/PnLBreakdown';
 import { WithdrawalCalculator } from './components/WithdrawalCalculator';
 import { ExportImportModal } from './components/ExportImportModal';
 import { HoldingsFilter } from './components/HoldingsFilter';
@@ -51,7 +50,6 @@ import {
   calculateRebalance,
   getDefaultTargetAllocations,
   getHistoricalSnapshots,
-  updateHoldingPnL,
   PnLData,
 } from './services/analyticsService';
 import { checkAndUnlockAchievements } from './services/achievementService';
@@ -251,28 +249,12 @@ function App() {
 
         const newPrice = prices[holding.symbol];
         if (newPrice && Math.abs(newPrice - holding.current_price) > 0.01) {
-          const costBasis = holding.cost_basis || holding.purchase_price;
-          const currentValue = newPrice * holding.quantity;
-          const totalCost = costBasis * holding.quantity;
-          const unrealizedPnl = currentValue - totalCost;
-          const unrealizedPnlPercent = totalCost > 0 ? (unrealizedPnl / totalCost) * 100 : 0;
-
           await supabase
             .from('holdings')
-            .update({
-              current_price: newPrice,
-              unrealized_pnl: unrealizedPnl,
-              unrealized_pnl_percent: unrealizedPnlPercent,
-              updated_at: new Date().toISOString()
-            })
+            .update({ current_price: newPrice, updated_at: new Date().toISOString() })
             .eq('id', holding.id);
 
-          return {
-            ...holding,
-            current_price: newPrice,
-            unrealized_pnl: unrealizedPnl,
-            unrealized_pnl_percent: unrealizedPnlPercent
-          };
+          return { ...holding, current_price: newPrice };
         }
         return holding;
       });
@@ -681,8 +663,6 @@ function App() {
             {livePnlData && (
               <>
                 <CashDashboard />
-
-                <PnLBreakdown />
 
                 <div>
                   <h3 className="text-lg font-bold text-slate-800 dark:text-gray-200 mb-3 flex items-center gap-2">

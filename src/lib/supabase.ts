@@ -15,10 +15,6 @@ export interface Holding {
   purchase_price: number;
   quantity: number;
   current_price: number;
-  cost_basis?: number;
-  unrealized_pnl?: number;
-  unrealized_pnl_percent?: number;
-  total_realized_pnl?: number;
   manual_price?: boolean;
   manual_price_updated_at?: string;
   price_notes?: string;
