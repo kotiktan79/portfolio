@@ -715,11 +715,11 @@ function App() {
                 </button>
                 <button
                   onClick={() => setShowAIAdvisor(true)}
-                  className="flex items-center gap-2 px-3 md:px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg transition-all shadow-md hover:scale-105"
+                  className="flex items-center gap-2 px-4 md:px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg transition-all shadow-lg hover:shadow-xl hover:scale-105 font-semibold"
                   title="AI Danışman"
                 >
-                  <Activity size={18} />
-                  <span className="font-medium hidden sm:inline">AI Danışman</span>
+                  <Activity size={20} />
+                  <span className="font-medium">AI Danışman</span>
                 </button>
                 <button
                   onClick={() => setShowAddModal(true)}
