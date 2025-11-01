@@ -305,7 +305,7 @@ function App() {
     const totalPnl = unrealizedPnl + totalRealized;
     const pnlPercent = totalInv > 0 ? (totalPnl / totalInv) * 100 : 0;
 
-    await savePortfolioSnapshot(totalValue, totalInv, totalPnl, pnlPercent, currentHoldings);
+    await savePortfolioSnapshot(totalValue, totalInv, totalPnl, pnlPercent);
     const data = await getPnLData();
     setPnlData(data);
   }

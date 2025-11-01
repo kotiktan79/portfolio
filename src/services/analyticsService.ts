@@ -1,5 +1,4 @@
 import { supabase } from '../lib/supabase';
-import { normalizeToBaseCurrency } from './currencyService';
 
 export interface PnLData {
   period: string;
@@ -29,49 +28,40 @@ export async function savePortfolioSnapshot(
   totalValue: number,
   totalInvestment: number,
   totalPnl: number,
-  pnlPercentage: number,
-  holdings?: any[]
+  pnlPercentage: number
 ) {
-  const today = new Date().toISOString().split('T')[0];
+  try {
+    const today = new Date().toISOString().split('T')[0];
 
-  let normalizedValue = totalValue;
-  let normalizedInvestment = totalInvestment;
-  let normalizedPnl = totalPnl;
-
-  if (holdings && holdings.length > 0) {
-    const normalized = await normalizeToBaseCurrency(holdings, 'TRY');
-    normalizedValue = normalized.reduce((sum, h) => sum + h.normalized_current, 0);
-    normalizedInvestment = normalized.reduce((sum, h) => sum + h.normalized_invested, 0);
-    normalizedPnl = normalizedValue - normalizedInvestment;
-    pnlPercentage = normalizedInvestment > 0 ? (normalizedPnl / normalizedInvestment) * 100 : 0;
-  }
-
-  const { data: existingSnapshot } = await supabase
-    .from('portfolio_snapshots')
-    .select('id')
-    .eq('snapshot_date', today)
-    .maybeSingle();
-
-  if (existingSnapshot) {
-    await supabase
+    const { data: existingSnapshot } = await supabase
       .from('portfolio_snapshots')
-      .update({
-        total_value: normalizedValue,
-        total_investment: normalizedInvestment,
-        total_pnl: normalizedPnl,
-        pnl_percentage: pnlPercentage,
-      })
-      .eq('id', existingSnapshot.id);
-  } else {
-    await supabase.from('portfolio_snapshots').insert([
-      {
-        total_value: normalizedValue,
-        total_investment: normalizedInvestment,
-        total_pnl: normalizedPnl,
-        pnl_percentage: pnlPercentage,
-        snapshot_date: today,
-      },
-    ]);
+      .select('id')
+      .eq('snapshot_date', today)
+      .maybeSingle();
+
+    if (existingSnapshot) {
+      await supabase
+        .from('portfolio_snapshots')
+        .update({
+          total_value: totalValue,
+          total_investment: totalInvestment,
+          total_pnl: totalPnl,
+          pnl_percentage: pnlPercentage,
+        })
+        .eq('id', existingSnapshot.id);
+    } else {
+      await supabase.from('portfolio_snapshots').insert([
+        {
+          total_value: totalValue,
+          total_investment: totalInvestment,
+          total_pnl: totalPnl,
+          pnl_percentage: pnlPercentage,
+          snapshot_date: today,
+        },
+      ]);
+    }
+  } catch (error) {
+    console.error('Error saving portfolio snapshot:', error);
   }
 }
 
@@ -80,40 +70,58 @@ export async function getPnLData(): Promise<{
   weekly: PnLData;
   monthly: PnLData;
 }> {
-  const { data: snapshots } = await supabase
-    .from('portfolio_snapshots')
-    .select('*')
-    .order('snapshot_date', { ascending: false })
-    .limit(60);
+  try {
+    const { data: snapshots, error } = await supabase
+      .from('portfolio_snapshots')
+      .select('*')
+      .order('snapshot_date', { ascending: false })
+      .limit(60);
 
-  if (!snapshots || snapshots.length === 0) {
+    if (error) {
+      console.error('Error fetching snapshots:', error);
+      return {
+        daily: { period: 'Günlük', value: 0, percentage: 0, change: 0 },
+        weekly: { period: 'Haftalık', value: 0, percentage: 0, change: 0 },
+        monthly: { period: 'Aylık', value: 0, percentage: 0, change: 0 },
+      };
+    }
+
+    if (!snapshots || snapshots.length === 0) {
+      return {
+        daily: { period: 'Günlük', value: 0, percentage: 0, change: 0 },
+        weekly: { period: 'Haftalık', value: 0, percentage: 0, change: 0 },
+        monthly: { period: 'Aylık', value: 0, percentage: 0, change: 0 },
+      };
+    }
+
+    const current = snapshots[0];
+    const yesterday = snapshots.find((_s, i) => i >= 1);
+    const lastWeek = snapshots.find((_s, i) => i >= 7);
+    const lastMonth = snapshots.find((_s, i) => i >= 30);
+
+    const calculateChange = (
+      current: PortfolioSnapshot,
+      previous?: PortfolioSnapshot
+    ) => {
+      if (!previous) return { value: 0, percentage: 0, change: 0 };
+      const change = current.total_value - previous.total_value;
+      const percentage = ((change / previous.total_value) * 100);
+      return { value: current.total_value, percentage, change };
+    };
+
+    return {
+      daily: { period: 'Günlük', ...calculateChange(current, yesterday) },
+      weekly: { period: 'Haftalık', ...calculateChange(current, lastWeek) },
+      monthly: { period: 'Aylık', ...calculateChange(current, lastMonth) },
+    };
+  } catch (err) {
+    console.error('Unexpected error in getPnLData:', err);
     return {
       daily: { period: 'Günlük', value: 0, percentage: 0, change: 0 },
       weekly: { period: 'Haftalık', value: 0, percentage: 0, change: 0 },
       monthly: { period: 'Aylık', value: 0, percentage: 0, change: 0 },
     };
   }
-
-  const current = snapshots[0];
-  const yesterday = snapshots.find((_s, i) => i >= 1);
-  const lastWeek = snapshots.find((_s, i) => i >= 7);
-  const lastMonth = snapshots.find((_s, i) => i >= 30);
-
-  const calculateChange = (
-    current: PortfolioSnapshot,
-    previous?: PortfolioSnapshot
-  ) => {
-    if (!previous) return { value: 0, percentage: 0, change: 0 };
-    const change = current.total_value - previous.total_value;
-    const percentage = ((change / previous.total_value) * 100);
-    return { value: current.total_value, percentage, change };
-  };
-
-  return {
-    daily: { period: 'Günlük', ...calculateChange(current, yesterday) },
-    weekly: { period: 'Haftalık', ...calculateChange(current, lastWeek) },
-    monthly: { period: 'Aylık', ...calculateChange(current, lastMonth) },
-  };
 }
 
 export async function getHistoricalSnapshots(days: number): Promise<PortfolioSnapshot[]> {
@@ -287,9 +295,14 @@ export interface AssetTypePnLSummary {
 }
 
 export async function getPnLSummaryByAssetType(): Promise<AssetTypePnLSummary[]> {
-  const { data: holdings } = await supabase
+  const { data: holdings, error } = await supabase
     .from('holdings')
     .select('*');
+
+  if (error) {
+    console.error('Error fetching holdings for PnL summary:', error);
+    return [];
+  }
 
   if (!holdings || holdings.length === 0) return [];
 
@@ -297,17 +310,9 @@ export async function getPnLSummaryByAssetType(): Promise<AssetTypePnLSummary[]>
 
   for (const holding of holdings) {
     const assetType = holding.asset_type;
-
-    const holdingCurrency = holding.currency || 'TRY';
-    const purchaseCurrency = holding.purchase_currency || holdingCurrency;
-
     const currentValue = holding.current_price * holding.quantity;
     const investment = holding.purchase_price * holding.quantity;
-
-    const currentValueTRY = holdingCurrency === 'TRY' ? currentValue : holding.original_try_current_price ? holding.original_try_current_price * holding.quantity : currentValue;
-    const investmentTRY = purchaseCurrency === 'TRY' ? investment : holding.original_try_price ? holding.original_try_price * holding.quantity : investment;
-
-    const unrealizedPnl = currentValueTRY - investmentTRY;
+    const unrealizedPnl = currentValue - investment;
     const realizedPnl = holding.total_realized_pnl || 0;
     const totalPnl = unrealizedPnl + realizedPnl;
 
@@ -324,8 +329,8 @@ export async function getPnLSummaryByAssetType(): Promise<AssetTypePnLSummary[]>
     }
 
     const current = summary.get(assetType)!;
-    current.total_value += currentValueTRY;
-    current.total_investment += investmentTRY;
+    current.total_value += currentValue;
+    current.total_investment += investment;
     current.total_unrealized_pnl += unrealizedPnl;
     current.total_realized_pnl += realizedPnl;
     current.total_pnl += totalPnl;
