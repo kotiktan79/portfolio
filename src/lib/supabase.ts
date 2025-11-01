@@ -18,6 +18,10 @@ export interface Holding {
   manual_price?: boolean;
   manual_price_updated_at?: string;
   price_notes?: string;
+  cost_basis?: number;
+  unrealized_pnl?: number;
+  unrealized_pnl_percent?: number;
+  total_realized_pnl?: number;
   created_at: string;
   updated_at: string;
 }

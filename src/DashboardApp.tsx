@@ -122,7 +122,13 @@ function DashboardApp() {
     0
   );
 
-  const totalProfitLoss = totalCurrentValue - totalInvestment;
+  const totalRealized = holdings.reduce(
+    (sum, h) => sum + (h.total_realized_pnl || 0),
+    0
+  );
+
+  const unrealizedPnl = totalCurrentValue - totalInvestment;
+  const totalProfitLoss = unrealizedPnl + totalRealized;
   const totalProfitLossPercent = totalInvestment > 0
     ? (totalProfitLoss / totalInvestment) * 100
     : 0;

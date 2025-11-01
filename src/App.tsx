@@ -279,10 +279,17 @@ function App() {
       (sum, h) => sum + h.purchase_price * h.quantity,
       0
     );
-    const pnl = totalValue - totalInv;
-    const pnlPercent = totalInv > 0 ? (pnl / totalInv) * 100 : 0;
 
-    await savePortfolioSnapshot(totalValue, totalInv, pnl, pnlPercent);
+    const totalRealized = currentHoldings.reduce(
+      (sum, h) => sum + (h.total_realized_pnl || 0),
+      0
+    );
+
+    const unrealizedPnl = totalValue - totalInv;
+    const totalPnl = unrealizedPnl + totalRealized;
+    const pnlPercent = totalInv > 0 ? (totalPnl / totalInv) * 100 : 0;
+
+    await savePortfolioSnapshot(totalValue, totalInv, totalPnl, pnlPercent);
     const data = await getPnLData();
     setPnlData(data);
   }
@@ -419,7 +426,13 @@ function App() {
     0
   );
 
-  const totalProfitLoss = totalCurrentValue - totalInvestment;
+  const totalRealized = holdings.reduce(
+    (sum, h) => sum + (h.total_realized_pnl || 0),
+    0
+  );
+
+  const unrealizedPnl = totalCurrentValue - totalInvestment;
+  const totalProfitLoss = unrealizedPnl + totalRealized;
   const totalProfitLossPercent = totalInvestment > 0
     ? (totalProfitLoss / totalInvestment) * 100
     : 0;
