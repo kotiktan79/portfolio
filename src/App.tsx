@@ -33,6 +33,9 @@ import { AssetAllocationPage } from './components/AssetAllocationPage';
 import ComprehensiveAnalytics from './components/ComprehensiveAnalytics';
 import RebalancingEngine from './components/RebalancingEngine';
 import ScenarioSimulator from './components/ScenarioSimulator';
+import AIAdvisor from './components/AIAdvisor';
+import InstallPWA from './components/InstallPWA';
+import MobileBottomNav from './components/MobileBottomNav';
 import { useToast } from './hooks/useToast';
 import { useDarkMode } from './hooks/useDarkMode';
 import { useTheme } from './hooks/useTheme';
@@ -57,6 +60,7 @@ import {
 import { checkAndUnlockAchievements } from './services/achievementService';
 import { getAllTransactions, getTotalDividends } from './services/transactionService';
 import { requestNotificationPermission, notifyAchievementUnlocked, getNotificationPermissionStatus } from './services/notificationService';
+import { registerServiceWorker, setupInstallPrompt, setupConnectionListener } from './services/pwaService';
 
 function App() {
   const [holdings, setHoldings] = useState<Holding[]>([]);
@@ -73,6 +77,8 @@ function App() {
   const [showAnalyticsPage, setShowAnalyticsPage] = useState(false);
   const [showRebalancingPage, setShowRebalancingPage] = useState(false);
   const [showScenarioPage, setShowScenarioPage] = useState(false);
+  const [showAIAdvisor, setShowAIAdvisor] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAssetType, setSelectedAssetType] = useState<AssetType | 'all'>('all');
   const [sortBy, setSortBy] = useState<'name' | 'value' | 'pnl' | 'pnl_percent'>('value');
@@ -104,6 +110,10 @@ function App() {
     loadPnLData();
     loadHistoricalData();
     checkNotificationPermission();
+
+    registerServiceWorker();
+    setupInstallPrompt();
+    setupConnectionListener(setIsOnline);
 
     const unsubscribeStatus = subscribeToConnectionStatus((status) => {
       setConnectionStatus(status);
@@ -489,6 +499,24 @@ function App() {
     );
   }
 
+  if (showAIAdvisor) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-between mb-6">
+            <button
+              onClick={() => setShowAIAdvisor(false)}
+              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              ← Geri
+            </button>
+          </div>
+          <AIAdvisor />
+        </div>
+      </div>
+    );
+  }
+
   if (showAnalyticsPage) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4">
@@ -678,6 +706,14 @@ function App() {
                 >
                   <Zap size={18} />
                   <span className="font-medium hidden sm:inline">Senaryo</span>
+                </button>
+                <button
+                  onClick={() => setShowAIAdvisor(true)}
+                  className="flex items-center gap-2 px-3 md:px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg transition-all shadow-md hover:scale-105"
+                  title="AI Danışman"
+                >
+                  <Activity size={18} />
+                  <span className="font-medium hidden sm:inline">AI Danışman</span>
                 </button>
                 <button
                   onClick={() => setShowAddModal(true)}
@@ -1034,6 +1070,7 @@ function App() {
       )}
 
       <ToastContainer toasts={toast.toasts} onClose={toast.removeToast} />
+      <InstallPWA />
     </div>
   );
 }
