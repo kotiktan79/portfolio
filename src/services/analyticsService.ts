@@ -297,9 +297,17 @@ export async function getPnLSummaryByAssetType(): Promise<AssetTypePnLSummary[]>
 
   for (const holding of holdings) {
     const assetType = holding.asset_type;
+
+    const holdingCurrency = holding.currency || 'TRY';
+    const purchaseCurrency = holding.purchase_currency || holdingCurrency;
+
     const currentValue = holding.current_price * holding.quantity;
     const investment = holding.purchase_price * holding.quantity;
-    const unrealizedPnl = currentValue - investment;
+
+    const currentValueTRY = holdingCurrency === 'TRY' ? currentValue : holding.original_try_current_price ? holding.original_try_current_price * holding.quantity : currentValue;
+    const investmentTRY = purchaseCurrency === 'TRY' ? investment : holding.original_try_price ? holding.original_try_price * holding.quantity : investment;
+
+    const unrealizedPnl = currentValueTRY - investmentTRY;
     const realizedPnl = holding.total_realized_pnl || 0;
     const totalPnl = unrealizedPnl + realizedPnl;
 
@@ -316,8 +324,8 @@ export async function getPnLSummaryByAssetType(): Promise<AssetTypePnLSummary[]>
     }
 
     const current = summary.get(assetType)!;
-    current.total_value += currentValue;
-    current.total_investment += investment;
+    current.total_value += currentValueTRY;
+    current.total_investment += investmentTRY;
     current.total_unrealized_pnl += unrealizedPnl;
     current.total_realized_pnl += realizedPnl;
     current.total_pnl += totalPnl;
