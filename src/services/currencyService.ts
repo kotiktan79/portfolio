@@ -23,14 +23,17 @@ export async function getExchangeRate(from: string, to: string): Promise<number>
   try {
     const { data, error } = await supabase
       .from('exchange_rates')
-      .select('rate')
+      .select('rate, from_currency, to_currency, recorded_at, source')
       .eq('from_currency', from)
       .eq('to_currency', to)
       .order('recorded_at', { ascending: false })
       .limit(1)
       .maybeSingle();
 
-    if (error) throw error;
+    if (error) {
+      console.error(`Error getting exchange rate ${from}/${to}:`, error);
+      throw error;
+    }
 
     if (data) {
       rateCache.set(cacheKey, { rate: data.rate, timestamp: Date.now() });
