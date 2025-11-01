@@ -267,10 +267,14 @@ function App() {
         if (newPrice && Math.abs(newPrice - holding.current_price) > 0.01) {
           await supabase
             .from('holdings')
-            .update({ current_price: newPrice, updated_at: new Date().toISOString() })
+            .update({
+              current_price: newPrice,
+              currency: 'TRY',
+              updated_at: new Date().toISOString()
+            })
             .eq('id', holding.id);
 
-          return { ...holding, current_price: newPrice };
+          return { ...holding, current_price: newPrice, currency: 'TRY' };
         }
         return holding;
       });
@@ -363,7 +367,11 @@ function App() {
   }) {
     const { data, error } = await supabase
       .from('holdings')
-      .insert([newHolding])
+      .insert([{
+        ...newHolding,
+        currency: 'TRY',
+        purchase_currency: 'TRY'
+      }])
       .select()
       .maybeSingle();
 
