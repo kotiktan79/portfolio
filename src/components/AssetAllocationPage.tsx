@@ -1,6 +1,6 @@
 import { Holding } from '../lib/supabase';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { TrendingUp, TrendingDown, PieChart as PieIcon, DollarSign } from 'lucide-react';
+import { TrendingUp, TrendingDown, PieChart as PieIcon } from 'lucide-react';
 
 interface AssetAllocationPageProps {
   holdings: Holding[];
@@ -34,7 +34,6 @@ export function AssetAllocationPage({ holdings, onBack }: AssetAllocationPagePro
     const currentValue = holding.current_price * holding.quantity;
     const investmentValue = holding.purchase_price * holding.quantity;
     const profit = currentValue - investmentValue;
-    const profitPercent = investmentValue > 0 ? (profit / investmentValue) * 100 : 0;
 
     if (!assetTypeMap.has(holding.asset_type)) {
       const info = ASSET_TYPE_INFO[holding.asset_type] || { name: holding.asset_type, color: '#6B7280' };
@@ -143,12 +142,12 @@ export function AssetAllocationPage({ holdings, onBack }: AssetAllocationPagePro
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ percent }) => `${percent.toFixed(1)}%`}
+                  label={(entry: any) => `${(entry.percent * 100).toFixed(1)}%`}
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {pieData.map((entry, index) => {
+                  {pieData.map((_entry, index) => {
                     const assetInfo = assetData[index];
                     return <Cell key={`cell-${index}`} fill={assetInfo.color} />;
                   })}

@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { TrendingUp, TrendingDown, PieChart as PieChartIcon } from 'lucide-react';
 
 interface SectorData {
+  [key: string]: string | number;
   sector: string;
   value: number;
   percentage: number;
@@ -152,7 +153,7 @@ export default function SectorAnalysis() {
                 cx="50%"
                 cy="50%"
                 outerRadius={100}
-                label={({ sector, percentage }) => `${sector} ${percentage.toFixed(1)}%`}
+                label={(entry: any) => `${entry.sector} ${(entry.percentage || entry.percent * 100).toFixed(1)}%`}
               >
                 {sectorData.map((entry) => (
                   <Cell key={entry.sector} fill={SECTOR_COLORS[entry.sector] || SECTOR_COLORS['Diğer']} />

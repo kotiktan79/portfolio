@@ -261,3 +261,60 @@ export async function getAdvancedMetrics(): Promise<AdvancedMetrics> {
     alpha: 0,
   };
 }
+
+export interface AssetTypePnLSummary {
+  asset_type: string;
+  total_value: number;
+  total_investment: number;
+  total_unrealized_pnl: number;
+  total_realized_pnl: number;
+  total_pnl: number;
+  pnl_percent: number;
+}
+
+export async function getPnLSummaryByAssetType(): Promise<AssetTypePnLSummary[]> {
+  const { data: holdings } = await supabase
+    .from('holdings')
+    .select('*');
+
+  if (!holdings || holdings.length === 0) return [];
+
+  const summary = new Map<string, AssetTypePnLSummary>();
+
+  for (const holding of holdings) {
+    const assetType = holding.asset_type;
+    const currentValue = holding.current_price * holding.quantity;
+    const investment = holding.purchase_price * holding.quantity;
+    const unrealizedPnl = currentValue - investment;
+    const realizedPnl = holding.total_realized_pnl || 0;
+    const totalPnl = unrealizedPnl + realizedPnl;
+
+    if (!summary.has(assetType)) {
+      summary.set(assetType, {
+        asset_type: assetType,
+        total_value: 0,
+        total_investment: 0,
+        total_unrealized_pnl: 0,
+        total_realized_pnl: 0,
+        total_pnl: 0,
+        pnl_percent: 0,
+      });
+    }
+
+    const current = summary.get(assetType)!;
+    current.total_value += currentValue;
+    current.total_investment += investment;
+    current.total_unrealized_pnl += unrealizedPnl;
+    current.total_realized_pnl += realizedPnl;
+    current.total_pnl += totalPnl;
+  }
+
+  const result = Array.from(summary.values());
+  result.forEach(item => {
+    item.pnl_percent = item.total_investment > 0
+      ? (item.total_pnl / item.total_investment) * 100
+      : 0;
+  });
+
+  return result.sort((a, b) => b.total_value - a.total_value);
+}

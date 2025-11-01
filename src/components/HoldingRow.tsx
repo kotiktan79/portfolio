@@ -64,7 +64,7 @@ export const HoldingRow = memo(function HoldingRow({ holding, onEdit, onDelete, 
                   {formatCurrency(holding.current_price, 4)}
                 </span>
                 {holding.manual_price && (
-                  <Lock size={12} className="text-blue-600" title="Manuel Fiyat" />
+                  <Lock size={12} className="text-blue-600" />
                 )}
               </div>
               {holding.manual_price && holding.manual_price_updated_at && (

@@ -16,7 +16,6 @@ export type ConnectionStatus = 'connected' | 'disconnected' | 'connecting' | 'er
 
 const BINANCE_API = 'https://api.binance.com/api/v3/ticker/price';
 const BINANCE_WS = 'wss://stream.binance.com:9443/ws';
-const COINGECKO_API = 'https://api.coingecko.com/api/v3';
 
 // Rate limiting
 interface RateLimitInfo {
@@ -65,7 +64,8 @@ async function waitForRateLimit(service: string): Promise<void> {
   }
 }
 
-// Retry wrapper for API calls
+// Retry wrapper for API calls (currently unused but kept for future use)
+// @ts-ignore - unused function kept for future use
 async function retryFetch<T>(
   fetchFn: () => Promise<T>,
   retries: number = 2,
@@ -101,6 +101,8 @@ const CRYPTO_SYMBOLS: { [key: string]: string } = {
   'DOGE': 'DOGEUSDT',
 };
 
+// CoinGecko IDs mapping (currently unused but kept for future use)
+// @ts-ignore - unused constant kept for future use
 const COINGECKO_IDS: { [key: string]: string } = {
   'BTC': 'bitcoin',
   'ETH': 'ethereum',
