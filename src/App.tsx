@@ -429,12 +429,12 @@ function App() {
 
 
   const totalInvestment = holdings.reduce(
-    (sum, h) => sum + convertToTRY(h.purchase_price * h.quantity, h.purchase_currency || 'TRY'),
+    (sum, h) => sum + h.purchase_price * h.quantity,
     0
   );
 
   const totalCurrentValue = holdings.reduce(
-    (sum, h) => sum + convertToTRY(h.current_price * h.quantity, h.currency || 'TRY'),
+    (sum, h) => sum + h.current_price * h.quantity,
     0
   );
 

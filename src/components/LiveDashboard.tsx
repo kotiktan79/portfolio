@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { TrendingUp, TrendingDown, DollarSign, Activity, ArrowUp, ArrowDown, Maximize2, PieChart, AlertTriangle, Target, Zap, Scale } from 'lucide-react';
 import { Holding, supabase } from '../lib/supabase';
 import { formatCurrency, formatPercentage } from '../services/priceService';
-import { convertToTRY } from '../services/currencyService';
 
 interface LiveDashboardProps {
   holdings: Holding[];
@@ -98,8 +97,8 @@ export function LiveDashboard({
   };
 
   const holdingsWithPnL: HoldingWithPnL[] = holdings.map((h) => {
-    const value = convertToTRY(h.current_price * h.quantity, h.currency || 'TRY');
-    const invested = convertToTRY(h.purchase_price * h.quantity, h.purchase_currency || 'TRY');
+    const value = h.current_price * h.quantity;
+    const invested = h.purchase_price * h.quantity;
     const pnl = value - invested;
     const pnlPercent = invested > 0 ? (pnl / invested) * 100 : 0;
     const weight = totalValue > 0 ? (value / totalValue) * 100 : 0;
