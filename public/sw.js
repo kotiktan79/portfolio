@@ -90,12 +90,6 @@ self.addEventListener('fetch', (event) => {
         });
       })
     );
-  } else {
-    event.respondWith(
-      fetch(request).catch(() => {
-        return caches.match(request);
-      })
-    );
   }
 });
 
