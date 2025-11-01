@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { TrendingUp, TrendingDown, DollarSign, Activity, ArrowUp, ArrowDown, Maximize2, PieChart, AlertTriangle, Target, Zap } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Activity, ArrowUp, ArrowDown, Maximize2, PieChart, AlertTriangle, Target, Zap, Scale } from 'lucide-react';
 import { Holding, supabase } from '../lib/supabase';
 import { formatCurrency, formatPercentage } from '../services/priceService';
 

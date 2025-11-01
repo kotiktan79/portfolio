@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, TrendingUp, RefreshCw, Target, Moon, Sun, Bell, BarChart3, Wifi, WifiOff, Activity, Download, Tv, DollarSign, Database, Shield, Palette, PieChart } from 'lucide-react';
+import { Plus, TrendingUp, RefreshCw, Target, Moon, Sun, Bell, BarChart3, Wifi, WifiOff, Activity, Download, Tv, DollarSign, Database, Shield, Palette, PieChart, Scale, Zap } from 'lucide-react';
 import { supabase, Holding, AssetType } from './lib/supabase';
 import { AddHoldingModal } from './components/AddHoldingModal';
 import { EditHoldingModal } from './components/EditHoldingModal';
@@ -31,6 +31,8 @@ import { AutoRebalanceSettings } from './components/AutoRebalanceSettings';
 import { PerformanceDashboard } from './components/PerformanceDashboard';
 import { AssetAllocationPage } from './components/AssetAllocationPage';
 import ComprehensiveAnalytics from './components/ComprehensiveAnalytics';
+import RebalancingEngine from './components/RebalancingEngine';
+import ScenarioSimulator from './components/ScenarioSimulator';
 import { useToast } from './hooks/useToast';
 import { useDarkMode } from './hooks/useDarkMode';
 import { useTheme } from './hooks/useTheme';
@@ -69,6 +71,8 @@ function App() {
   const [showAutoRebalanceModal, setShowAutoRebalanceModal] = useState(false);
   const [showAllocationPage, setShowAllocationPage] = useState(false);
   const [showAnalyticsPage, setShowAnalyticsPage] = useState(false);
+  const [showRebalancingPage, setShowRebalancingPage] = useState(false);
+  const [showScenarioPage, setShowScenarioPage] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAssetType, setSelectedAssetType] = useState<AssetType | 'all'>('all');
   const [sortBy, setSortBy] = useState<'name' | 'value' | 'pnl' | 'pnl_percent'>('value');
@@ -441,6 +445,50 @@ function App() {
   const totalInvestmentUSD = totalInvestment / usdRate;
   const totalCurrentValueUSD = totalCurrentValue / usdRate;
 
+  if (showRebalancingPage) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <Scale className="w-8 h-8 text-blue-600" />
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Portföy Rebalancing</h1>
+            </div>
+            <button
+              onClick={() => setShowRebalancingPage(false)}
+              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              Ana Sayfaya Dön
+            </button>
+          </div>
+          <RebalancingEngine />
+        </div>
+      </div>
+    );
+  }
+
+  if (showScenarioPage) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <Zap className="w-8 h-8 text-purple-600" />
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Senaryo Analizi</h1>
+            </div>
+            <button
+              onClick={() => setShowScenarioPage(false)}
+              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              Ana Sayfaya Dön
+            </button>
+          </div>
+          <ScenarioSimulator />
+        </div>
+      </div>
+    );
+  }
+
   if (showAnalyticsPage) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4">
@@ -614,6 +662,22 @@ function App() {
                 >
                   <Target size={18} />
                   <span className="font-medium hidden sm:inline">Rebalance</span>
+                </button>
+                <button
+                  onClick={() => setShowRebalancingPage(true)}
+                  className="flex items-center gap-2 px-3 md:px-4 py-2 bg-blue-500 bg-opacity-90 hover:bg-opacity-100 text-white rounded-lg transition-all shadow-md border border-blue-400/50 hover:scale-105"
+                  title="Akıllı Rebalancing"
+                >
+                  <Scale size={18} />
+                  <span className="font-medium hidden sm:inline">Akıllı Rebalance</span>
+                </button>
+                <button
+                  onClick={() => setShowScenarioPage(true)}
+                  className="flex items-center gap-2 px-3 md:px-4 py-2 bg-purple-500 bg-opacity-90 hover:bg-opacity-100 text-white rounded-lg transition-all shadow-md border border-purple-400/50 hover:scale-105"
+                  title="Senaryo Analizi"
+                >
+                  <Zap size={18} />
+                  <span className="font-medium hidden sm:inline">Senaryo</span>
                 </button>
                 <button
                   onClick={() => setShowAddModal(true)}
