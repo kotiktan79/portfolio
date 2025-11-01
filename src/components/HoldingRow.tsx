@@ -115,26 +115,28 @@ export const HoldingRow = memo(function HoldingRow({ holding, onEdit, onDelete, 
         <td className="px-6 py-4 text-right">
           <div className="flex flex-col items-end">
             <span className="font-bold text-gray-900 dark:text-white">
-              {formatCurrency(currentValue)} ₺
+              {formatCurrency(pnlData.currentValue)} ₺
             </span>
             <span className="text-sm text-blue-600 dark:text-blue-400">
-              ${formatCurrencyUSD(currentValue, usdRate)}
+              ${formatCurrencyUSD(pnlData.currentValue, usdRate)}
             </span>
-            <span className="text-xs text-gray-500 dark:text-gray-400">
-              {formatCurrency(totalCost)} ₺ maliyet
-            </span>
+            {((holding as any).currency && (holding as any).currency !== 'TRY') && (
+              <span className="text-xs text-blue-600">
+                {getCurrencySymbol((holding as any).currency)} bazlı
+              </span>
+            )}
           </div>
         </td>
         <td className="px-6 py-4 text-right">
           <div className="flex flex-col items-end">
             <span className={`font-bold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-              {formatCurrency(profitLoss)} ₺
+              {formatCurrency(pnlData.pnl)} ₺
             </span>
             <span className={`text-sm font-semibold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-              ${formatCurrencyUSD(profitLoss, usdRate)}
+              ${formatCurrencyUSD(pnlData.pnl, usdRate)}
             </span>
             <span className={`text-xs ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-              {formatPercentage(profitLossPercent)}
+              {formatPercentage(pnlData.pnlPercent)}
             </span>
           </div>
         </td>
