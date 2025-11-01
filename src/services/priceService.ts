@@ -330,41 +330,75 @@ export async function fetchGoldPrice(): Promise<number> {
 
 export async function fetchGoldFromAlternative(): Promise<number> {
   console.log('🔄 Trying alternative gold API...');
+
+  try {
+    const response = await fetch('https://api.goldapi.io/api/XAU/USD', {
+      cache: 'no-cache',
+      headers: {
+        'x-access-token': 'goldapi-demo-key'
+      }
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log('📦 GoldAPI.io response:', data);
+      if (data.price_gram_24k) {
+        const usdPerGram = data.price_gram_24k;
+        const usdTryRate = await fetchUSDTRYRate();
+        const tryPrice = usdPerGram * usdTryRate;
+
+        console.log(`🥇 Gold (GoldAPI):
+  - Price per gram (USD): $${usdPerGram.toFixed(2)}
+  - USD/TRY rate: ${usdTryRate}
+  - Final TL price: ${tryPrice.toFixed(2)} ₺/gram`);
+
+        return tryPrice;
+      }
+    }
+  } catch (error) {
+    console.warn('❌ GoldAPI failed, trying metals.live...');
+  }
+
   try {
     const response = await fetch('https://api.metals.live/v1/spot/gold', {
       cache: 'no-cache'
     });
 
-    if (!response.ok) throw new Error('Metals.live API failed');
+    if (response.ok) {
+      const data = await response.json();
+      console.log('📦 Metals.live response:', data);
+      const goldPricePerOunce = data[0]?.price || data.price;
 
-    const data = await response.json();
-    console.log('📦 Metals.live response:', data);
-    const goldPricePerOunce = data[0]?.price || data.price || 2650;
-    const gramPerOunce = 31.1035;
-    const usdTryRate = await fetchUSDTRYRate();
-    const pricePerGram = goldPricePerOunce / gramPerOunce;
-    const tryPrice = pricePerGram * usdTryRate;
+      if (goldPricePerOunce) {
+        const gramPerOunce = 31.1035;
+        const usdTryRate = await fetchUSDTRYRate();
+        const pricePerGram = goldPricePerOunce / gramPerOunce;
+        const tryPrice = pricePerGram * usdTryRate;
 
-    console.log(`🥇 Gold (alternative):
+        console.log(`🥇 Gold (Metals.live):
   - Price per oz: $${goldPricePerOunce}
   - Price per gram: $${pricePerGram.toFixed(2)}
   - USD/TRY rate: ${usdTryRate}
   - Final TL price: ${tryPrice.toFixed(2)} ₺/gram`);
 
-    return tryPrice;
+        return tryPrice;
+      }
+    }
   } catch (altError) {
-    console.warn('❌ All gold APIs failed, using fallback...');
-    const usdTryRate = await fetchUSDTRYRate();
-    const fallbackOzPrice = 2650;
-    const fallbackGramPrice = fallbackOzPrice / 31.1035;
-    const fallbackPrice = fallbackGramPrice * usdTryRate;
-    console.log(`🥇 Gold (fallback):
+    console.warn('❌ Metals.live also failed...');
+  }
+
+  console.warn('❌ All gold APIs failed, using fallback...');
+  const usdTryRate = await fetchUSDTRYRate();
+  const fallbackOzPrice = 2650;
+  const fallbackGramPrice = fallbackOzPrice / 31.1035;
+  const fallbackPrice = fallbackGramPrice * usdTryRate;
+  console.log(`🥇 Gold (fallback):
   - Fallback oz price: $${fallbackOzPrice}
   - Fallback gram price: $${fallbackGramPrice.toFixed(2)}
   - USD/TRY rate: ${usdTryRate}
   - Final TL price: ${fallbackPrice.toFixed(2)} ₺/gram`);
-    return fallbackPrice;
-  }
+  return fallbackPrice;
 }
 
 const EURONEXT_STOCKS: { [key: string]: string } = {
