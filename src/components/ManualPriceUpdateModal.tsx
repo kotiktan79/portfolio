@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, DollarSign, Info } from 'lucide-react';
+import { X, DollarSign, Info, Calculator } from 'lucide-react';
 
 interface ManualPriceUpdateModalProps {
   isOpen: boolean;
@@ -20,7 +20,28 @@ export function ManualPriceUpdateModal({
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [goldOzPrice, setGoldOzPrice] = useState('');
+  const [usdTryRate, setUsdTryRate] = useState('');
+  const isGold = symbol === 'ALTIN' || symbol === 'GOLD';
+
   if (!isOpen) return null;
+
+  const calculateGoldPrice = () => {
+    const ozPrice = parseFloat(goldOzPrice);
+    const tryRate = parseFloat(usdTryRate);
+
+    if (isNaN(ozPrice) || isNaN(tryRate) || ozPrice <= 0 || tryRate <= 0) {
+      alert('Lütfen geçerli değerler girin');
+      return;
+    }
+
+    const gramPerOunce = 31.1035;
+    const pricePerGram = ozPrice / gramPerOunce;
+    const tryPrice = pricePerGram * tryRate;
+
+    setPrice(tryPrice.toFixed(4));
+    setNotes(`Hesaplanan: $${ozPrice}/oz × ${tryRate} USD/TRY = ${tryPrice.toFixed(2)} ₺/gram`);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,6 +104,57 @@ export function ManualPriceUpdateModal({
             />
           </div>
 
+          {isGold && (
+            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 space-y-3">
+              <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300 font-medium">
+                <Calculator size={18} />
+                <span>Altın Fiyat Hesaplayıcı</span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-amber-700 dark:text-amber-400 mb-1">
+                    Ons Fiyatı ($)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={goldOzPrice}
+                    onChange={(e) => setGoldOzPrice(e.target.value)}
+                    className="w-full px-3 py-2 border border-amber-300 dark:border-amber-700 rounded-lg focus:ring-2 focus:ring-amber-500 dark:bg-gray-700 dark:text-white text-sm"
+                    placeholder="2650"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-amber-700 dark:text-amber-400 mb-1">
+                    USD/TRY Kuru
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={usdTryRate}
+                    onChange={(e) => setUsdTryRate(e.target.value)}
+                    className="w-full px-3 py-2 border border-amber-300 dark:border-amber-700 rounded-lg focus:ring-2 focus:ring-amber-500 dark:bg-gray-700 dark:text-white text-sm"
+                    placeholder="34.5"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={calculateGoldPrice}
+                className="w-full px-3 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm font-medium"
+              >
+                Gram Başı TL Hesapla
+              </button>
+
+              <p className="text-xs text-amber-700 dark:text-amber-400">
+                Formül: ($/ons ÷ 31.1035) × USD/TRY = ₺/gram
+              </p>
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Yeni Fiyat (₺)
@@ -97,7 +169,7 @@ export function ManualPriceUpdateModal({
                 className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                 placeholder="0.0000"
                 required
-                autoFocus
+                autoFocus={!isGold}
               />
             </div>
           </div>
