@@ -61,7 +61,7 @@ import { checkAndUnlockAchievements } from './services/achievementService';
 import { getAllTransactions, getTotalDividends } from './services/transactionService';
 import { requestNotificationPermission, notifyAchievementUnlocked, getNotificationPermissionStatus } from './services/notificationService';
 import { registerServiceWorker, setupInstallPrompt, setupConnectionListener } from './services/pwaService';
-import { convertToTRY, detectCurrency, startExchangeRateUpdates } from './services/currencyService';
+import { convertToTRY, detectCurrency, startExchangeRateUpdates, normalizeToBaseCurrency } from './services/currencyService';
 
 function App() {
   const [holdings, setHoldings] = useState<Holding[]>([]);
