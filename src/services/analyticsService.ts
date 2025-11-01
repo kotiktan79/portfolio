@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { normalizeToBaseCurrency } from './currencyService';
 
 export interface PnLData {
   period: string;
@@ -28,9 +29,22 @@ export async function savePortfolioSnapshot(
   totalValue: number,
   totalInvestment: number,
   totalPnl: number,
-  pnlPercentage: number
+  pnlPercentage: number,
+  holdings?: any[]
 ) {
   const today = new Date().toISOString().split('T')[0];
+
+  let normalizedValue = totalValue;
+  let normalizedInvestment = totalInvestment;
+  let normalizedPnl = totalPnl;
+
+  if (holdings && holdings.length > 0) {
+    const normalized = await normalizeToBaseCurrency(holdings, 'TRY');
+    normalizedValue = normalized.reduce((sum, h) => sum + h.normalized_current, 0);
+    normalizedInvestment = normalized.reduce((sum, h) => sum + h.normalized_invested, 0);
+    normalizedPnl = normalizedValue - normalizedInvestment;
+    pnlPercentage = normalizedInvestment > 0 ? (normalizedPnl / normalizedInvestment) * 100 : 0;
+  }
 
   const { data: existingSnapshot } = await supabase
     .from('portfolio_snapshots')
@@ -42,18 +56,18 @@ export async function savePortfolioSnapshot(
     await supabase
       .from('portfolio_snapshots')
       .update({
-        total_value: totalValue,
-        total_investment: totalInvestment,
-        total_pnl: totalPnl,
+        total_value: normalizedValue,
+        total_investment: normalizedInvestment,
+        total_pnl: normalizedPnl,
         pnl_percentage: pnlPercentage,
       })
       .eq('id', existingSnapshot.id);
   } else {
     await supabase.from('portfolio_snapshots').insert([
       {
-        total_value: totalValue,
-        total_investment: totalInvestment,
-        total_pnl: totalPnl,
+        total_value: normalizedValue,
+        total_investment: normalizedInvestment,
+        total_pnl: normalizedPnl,
         pnl_percentage: pnlPercentage,
         snapshot_date: today,
       },

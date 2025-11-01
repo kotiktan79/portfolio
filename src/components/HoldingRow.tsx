@@ -4,6 +4,7 @@ import { Holding } from '../lib/supabase';
 import { formatCurrency, formatCurrencyUSD, formatPercentage, getCachedUSDRate } from '../services/priceService';
 import { BuySellModal } from './BuySellModal';
 import { ManualPriceUpdateModal } from './ManualPriceUpdateModal';
+import { detectCurrency, calculatePnLWithCurrency, getCurrencySymbol } from '../services/currencyService';
 
 interface HoldingRowProps {
   holding: Holding;
@@ -17,17 +18,34 @@ export const HoldingRow = memo(function HoldingRow({ holding, onEdit, onDelete, 
   const [showSellModal, setShowSellModal] = useState(false);
   const [showPriceUpdateModal, setShowPriceUpdateModal] = useState(false);
   const [usdRate, setUsdRate] = useState(42);
+  const [pnlData, setPnlData] = useState({ pnl: 0, pnlPercent: 0, currentValue: 0 });
 
   useEffect(() => {
     getCachedUSDRate().then(setUsdRate);
-  }, []);
+    calculatePnL();
+  }, [holding]);
 
-  const totalCost = holding.purchase_price * holding.quantity;
-  const currentValue = holding.current_price * holding.quantity;
-  const profitLoss = currentValue - totalCost;
-  const profitLossPercent = (profitLoss / totalCost) * 100;
+  async function calculatePnL() {
+    const currency = (holding as any).currency || detectCurrency(holding.symbol, holding.asset_type);
+    const purchaseCurrency = (holding as any).purchase_currency || currency;
 
-  const isPositive = profitLoss >= 0;
+    const result = await calculatePnLWithCurrency(
+      holding.purchase_price,
+      purchaseCurrency,
+      holding.current_price,
+      currency,
+      holding.quantity,
+      'TRY'
+    );
+
+    setPnlData({
+      pnl: result.pnl,
+      pnlPercent: result.pnlPercent,
+      currentValue: result.currentValue,
+    });
+  }
+
+  const isPositive = pnlData.pnl >= 0;
 
   const getAssetTypeLabel = (type: string) => {
     const labels: Record<string, string> = {

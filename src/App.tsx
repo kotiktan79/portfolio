@@ -61,6 +61,7 @@ import { checkAndUnlockAchievements } from './services/achievementService';
 import { getAllTransactions, getTotalDividends } from './services/transactionService';
 import { requestNotificationPermission, notifyAchievementUnlocked, getNotificationPermissionStatus } from './services/notificationService';
 import { registerServiceWorker, setupInstallPrompt, setupConnectionListener } from './services/pwaService';
+import { normalizeToBaseCurrency, detectCurrency, startExchangeRateUpdates } from './services/currencyService';
 
 function App() {
   const [holdings, setHoldings] = useState<Holding[]>([]);
@@ -114,6 +115,7 @@ function App() {
     registerServiceWorker();
     setupInstallPrompt();
     setupConnectionListener(setIsOnline);
+    startExchangeRateUpdates();
 
     const unsubscribeStatus = subscribeToConnectionStatus((status) => {
       setConnectionStatus(status);
@@ -285,14 +287,10 @@ function App() {
   async function calculateAndUpdatePnL(currentHoldings = holdings) {
     if (currentHoldings.length === 0) return;
 
-    const totalValue = currentHoldings.reduce(
-      (sum, h) => sum + h.current_price * h.quantity,
-      0
-    );
-    const totalInv = currentHoldings.reduce(
-      (sum, h) => sum + h.purchase_price * h.quantity,
-      0
-    );
+    const normalized = await normalizeToBaseCurrency(currentHoldings, 'TRY');
+
+    const totalValue = normalized.reduce((sum, h) => sum + h.normalized_current, 0);
+    const totalInv = normalized.reduce((sum, h) => sum + h.normalized_invested, 0);
 
     const totalRealized = currentHoldings.reduce(
       (sum, h) => sum + (h.total_realized_pnl || 0),
@@ -303,7 +301,7 @@ function App() {
     const totalPnl = unrealizedPnl + totalRealized;
     const pnlPercent = totalInv > 0 ? (totalPnl / totalInv) * 100 : 0;
 
-    await savePortfolioSnapshot(totalValue, totalInv, totalPnl, pnlPercent);
+    await savePortfolioSnapshot(totalValue, totalInv, totalPnl, pnlPercent, currentHoldings);
     const data = await getPnLData();
     setPnlData(data);
   }
