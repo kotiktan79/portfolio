@@ -185,7 +185,7 @@ export function detectCurrency(symbol: string, assetType: string): string {
   }
 
   if (assetType === 'commodity') {
-    if (upperSymbol.includes('GOLD') || upperSymbol.includes('ALTIN')) return 'USD';
+    if (upperSymbol.includes('GOLD') || upperSymbol.includes('ALTIN')) return 'TRY';
     if (upperSymbol.includes('SILVER') || upperSymbol.includes('GUMUS')) return 'USD';
     if (upperSymbol.includes('BRENT') || upperSymbol.includes('OIL')) return 'USD';
     return 'USD';
