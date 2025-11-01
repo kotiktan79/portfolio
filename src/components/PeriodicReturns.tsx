@@ -25,7 +25,19 @@ export default function PeriodicReturns() {
     setLoading(true);
     try {
       const snapshots = await getHistoricalSnapshots(365);
+
+      if (!snapshots || snapshots.length === 0) {
+        console.warn('No portfolio snapshots found');
+        setMonthlyReturns([]);
+        setYearlyReturns([]);
+        setLoading(false);
+        return;
+      }
+
       if (snapshots.length < 2) {
+        console.warn('Need at least 2 snapshots for PnL calculation');
+        setMonthlyReturns([]);
+        setYearlyReturns([]);
         setLoading(false);
         return;
       }
@@ -37,6 +49,8 @@ export default function PeriodicReturns() {
       setYearlyReturns(yearly);
     } catch (error) {
       console.error('Error loading returns:', error);
+      setMonthlyReturns([]);
+      setYearlyReturns([]);
     } finally {
       setLoading(false);
     }
@@ -46,7 +60,17 @@ export default function PeriodicReturns() {
     const monthlyData = new Map<string, any[]>();
 
     snapshots.forEach((snapshot) => {
+      if (!snapshot || !snapshot.date || snapshot.total_value === undefined) {
+        console.warn('Invalid snapshot data:', snapshot);
+        return;
+      }
+
       const date = new Date(snapshot.date);
+      if (isNaN(date.getTime())) {
+        console.warn('Invalid date in snapshot:', snapshot.date);
+        return;
+      }
+
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
       if (!monthlyData.has(monthKey)) {
@@ -58,11 +82,18 @@ export default function PeriodicReturns() {
     const returns: MonthlyReturn[] = [];
 
     monthlyData.forEach((data, monthKey) => {
-      if (data.length < 2) return;
+      if (data.length === 0) return;
 
       data.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-      const startValue = data[0].total_value;
-      const endValue = data[data.length - 1].total_value;
+
+      const startValue = Number(data[0].total_value) || 0;
+      const endValue = Number(data[data.length - 1].total_value) || 0;
+
+      if (startValue === 0) {
+        console.warn('Start value is 0 for month:', monthKey);
+        return;
+      }
+
       const profit = endValue - startValue;
       const returnPct = (profit / startValue) * 100;
 
@@ -74,7 +105,7 @@ export default function PeriodicReturns() {
 
       returns.push({
         period: monthName,
-        return: returnPct,
+        return: isFinite(returnPct) ? returnPct : 0,
         startValue,
         endValue,
         profit,
@@ -92,7 +123,16 @@ export default function PeriodicReturns() {
     const yearlyData = new Map<string, any[]>();
 
     snapshots.forEach((snapshot) => {
-      const year = new Date(snapshot.date).getFullYear().toString();
+      if (!snapshot || !snapshot.date || snapshot.total_value === undefined) {
+        return;
+      }
+
+      const date = new Date(snapshot.date);
+      if (isNaN(date.getTime())) {
+        return;
+      }
+
+      const year = date.getFullYear().toString();
 
       if (!yearlyData.has(year)) {
         yearlyData.set(year, []);
@@ -103,17 +143,24 @@ export default function PeriodicReturns() {
     const returns: MonthlyReturn[] = [];
 
     yearlyData.forEach((data, year) => {
-      if (data.length < 2) return;
+      if (data.length === 0) return;
 
       data.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-      const startValue = data[0].total_value;
-      const endValue = data[data.length - 1].total_value;
+
+      const startValue = Number(data[0].total_value) || 0;
+      const endValue = Number(data[data.length - 1].total_value) || 0;
+
+      if (startValue === 0) {
+        console.warn('Start value is 0 for year:', year);
+        return;
+      }
+
       const profit = endValue - startValue;
       const returnPct = (profit / startValue) * 100;
 
       returns.push({
         period: year,
-        return: returnPct,
+        return: isFinite(returnPct) ? returnPct : 0,
         startValue,
         endValue,
         profit,
@@ -201,7 +248,12 @@ export default function PeriodicReturns() {
       {currentData.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-gray-500 dark:text-gray-400">
           <TrendingUp className="w-16 h-16 mb-4 opacity-50" />
-          <p>Henüz yeterli veri yok</p>
+          <p className="font-semibold mb-2">Henüz yeterli veri yok</p>
+          <p className="text-sm text-center max-w-md">
+            Periyodik getiri hesaplaması için en az 2 gün portföy snapshot'ı gereklidir.
+            <br />
+            Portföyünüz her gün otomatik olarak kaydedilir.
+          </p>
         </div>
       ) : (
         <>
