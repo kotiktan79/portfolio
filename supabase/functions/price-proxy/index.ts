@@ -116,28 +116,55 @@ async function fetchGold(): Promise<PriceResponse> {
   try {
     const response = await fetch('https://data-asg.goldprice.org/dbXRates/USD');
     if (!response.ok) throw new Error('Gold API failed');
-    
+
     const data = await response.json();
-    const pricePerOz = data.items?.[0]?.xauPrice;
-    
-    if (!pricePerOz) throw new Error('No gold price data');
-    
-    return { success: true, data: { pricePerOz } };
+    const pricePerOzUSD = data.items?.[0]?.xauPrice;
+
+    if (!pricePerOzUSD) throw new Error('No gold price data');
+
+    const usdTryRate = await getUSDTRYRate();
+    const gramPerOunce = 31.1035;
+    const pricePerGramUSD = pricePerOzUSD / gramPerOunce;
+    const pricePerGramTRY = pricePerGramUSD * usdTryRate;
+
+    console.log(`Gold: $${pricePerOzUSD}/oz -> $${pricePerGramUSD.toFixed(2)}/g -> ${pricePerGramTRY.toFixed(2)} ₺/g`);
+
+    return { success: true, data: { pricePerOz: pricePerOzUSD, pricePerGramTRY } };
   } catch (error) {
     try {
       const response = await fetch('https://api.metals.live/v1/spot/gold');
       if (!response.ok) throw new Error('Alternative gold API failed');
-      
+
       const data = await response.json();
-      const pricePerOz = data[0]?.price || data.price;
-      
-      if (!pricePerOz) throw new Error('No gold price data');
-      
-      return { success: true, data: { pricePerOz } };
+      const pricePerOzUSD = data[0]?.price || data.price;
+
+      if (!pricePerOzUSD) throw new Error('No gold price data');
+
+      const usdTryRate = await getUSDTRYRate();
+      const gramPerOunce = 31.1035;
+      const pricePerGramUSD = pricePerOzUSD / gramPerOunce;
+      const pricePerGramTRY = pricePerGramUSD * usdTryRate;
+
+      console.log(`Gold (alt): $${pricePerOzUSD}/oz -> $${pricePerGramUSD.toFixed(2)}/g -> ${pricePerGramTRY.toFixed(2)} ₺/g`);
+
+      return { success: true, data: { pricePerOz: pricePerOzUSD, pricePerGramTRY } };
     } catch (altError) {
       return { success: false, error: altError.message };
     }
   }
+}
+
+async function getUSDTRYRate(): Promise<number> {
+  try {
+    const response = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+    if (response.ok) {
+      const data = await response.json();
+      return data.rates.TRY || 35.0;
+    }
+  } catch (error) {
+    console.warn('Failed to fetch USD/TRY rate, using fallback');
+  }
+  return 35.0;
 }
 
 async function fetchCrypto(symbols: string[]): Promise<PriceResponse> {

@@ -302,7 +302,11 @@ export async function fetchGoldPrice(): Promise<number> {
       if (response.ok) {
         const result = await response.json();
         console.log('📦 Proxy response:', result);
-        if (result.success && result.data?.pricePerOz) {
+        if (result.success && result.data?.pricePerGramTRY) {
+          const tryPrice = result.data.pricePerGramTRY;
+          console.log(`🥇 Gold from proxy: ${tryPrice.toFixed(2)} ₺/gram`);
+          return tryPrice;
+        } else if (result.success && result.data?.pricePerOz) {
           const goldPricePerOunce = result.data.pricePerOz;
           const gramPerOunce = 31.1035;
           const usdTryRate = await fetchUSDTRYRate();
