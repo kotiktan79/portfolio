@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Brain, TrendingUp, AlertTriangle, Target, Lightbulb } from 'lucide-react';
+import { Brain, TrendingUp, AlertTriangle, Target, Lightbulb, Sparkles, Shield, BarChart3 } from 'lucide-react';
 import { Holding } from '../lib/supabase';
 import { calculateVolatility } from '../services/technicalIndicators';
 
@@ -16,13 +16,83 @@ interface AIPortfolioSuggestionsProps {
   totalValue: number;
 }
 
+type AnalysisType = 'overview' | 'risk' | 'diversification' | 'suggestions';
+
 export function AIPortfolioSuggestions({ holdings, totalValue }: AIPortfolioSuggestionsProps) {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState(false);
+  const [aiAnalysis, setAiAnalysis] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<AnalysisType>('overview');
+  const [useAI, setUseAI] = useState(false);
 
   useEffect(() => {
-    generateSuggestions();
-  }, [holdings, totalValue]);
+    if (useAI) {
+      generateAIAnalysis(activeTab);
+    } else {
+      generateSuggestions();
+    }
+  }, [holdings, totalValue, activeTab, useAI]);
+
+  async function generateAIAnalysis(analysisType: AnalysisType) {
+    setLoading(true);
+    setAiAnalysis('');
+
+    try {
+      const portfolioData = {
+        holdings: holdings.map(h => ({
+          symbol: h.symbol,
+          asset_type: h.asset_type,
+          quantity: h.quantity,
+          avg_price: h.purchase_price,
+          current_price: h.current_price,
+          total_value: h.current_price * h.quantity,
+          profit_loss: (h.current_price - h.purchase_price) * h.quantity,
+          profit_loss_percent: ((h.current_price - h.purchase_price) / h.purchase_price) * 100,
+        })),
+        total_value: totalValue,
+        total_invested: holdings.reduce((sum, h) => sum + h.purchase_price * h.quantity, 0),
+        total_profit_loss: holdings.reduce((sum, h) => sum + (h.current_price - h.purchase_price) * h.quantity, 0),
+        total_profit_loss_percent: 0,
+      };
+
+      portfolioData.total_profit_loss_percent =
+        (portfolioData.total_profit_loss / portfolioData.total_invested) * 100;
+
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      const response = await fetch(
+        `${supabaseUrl}/functions/v1/ai-portfolio-advisor`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            portfolio: portfolioData,
+            analysisType,
+            riskProfile: 'moderate',
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (result.success && result.analysis) {
+        setAiAnalysis(result.analysis);
+      } else if (result.suggestions) {
+        setAiAnalysis(result.suggestions.join('\n\n'));
+      } else {
+        setAiAnalysis('AI analizi şu anda kullanılamıyor. Temel öneriler için AI modunu kapatın.');
+      }
+    } catch (error) {
+      console.error('AI analysis error:', error);
+      setAiAnalysis('Bağlantı hatası. Lütfen daha sonra tekrar deneyin.');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   function generateSuggestions() {
     setLoading(true);
@@ -205,34 +275,99 @@ export function AIPortfolioSuggestions({ holdings, totalValue }: AIPortfolioSugg
           <Brain className="text-purple-600" size={24} />
           <div>
             <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-              AI Portföy Önerileri
+              AI Portföy Danışmanı
             </h3>
             <p className="text-sm text-slate-500 dark:text-gray-400">
-              Yapay zeka destekli analiz
+              {useAI ? 'OpenAI GPT-4 Analizi' : 'Temel Analiz'}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 px-3 py-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-          <TrendingUp className="text-purple-600" size={16} />
-          <span className="text-sm font-semibold text-purple-700 dark:text-purple-400">
-            {suggestions.length} Öneri
-          </span>
-        </div>
+        <button
+          onClick={() => setUseAI(!useAI)}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+            useAI
+              ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg'
+              : 'bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600'
+          }`}
+        >
+          <Sparkles size={16} />
+          {useAI ? 'AI Açık' : 'AI Aç'}
+        </button>
       </div>
 
-      {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+      {useAI && (
+        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+          <button
+            onClick={() => setActiveTab('overview')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm whitespace-nowrap transition-colors ${
+              activeTab === 'overview'
+                ? 'bg-purple-600 text-white'
+                : 'bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600'
+            }`}
+          >
+            <BarChart3 size={16} />
+            Genel
+          </button>
+          <button
+            onClick={() => setActiveTab('risk')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm whitespace-nowrap transition-colors ${
+              activeTab === 'risk'
+                ? 'bg-purple-600 text-white'
+                : 'bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600'
+            }`}
+          >
+            <Shield size={16} />
+            Risk
+          </button>
+          <button
+            onClick={() => setActiveTab('diversification')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm whitespace-nowrap transition-colors ${
+              activeTab === 'diversification'
+                ? 'bg-purple-600 text-white'
+                : 'bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600'
+            }`}
+          >
+            <Target size={16} />
+            Diversifikasyon
+          </button>
+          <button
+            onClick={() => setActiveTab('suggestions')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm whitespace-nowrap transition-colors ${
+              activeTab === 'suggestions'
+                ? 'bg-purple-600 text-white'
+                : 'bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-gray-600'
+            }`}
+          >
+            <Lightbulb size={16} />
+            Öneriler
+          </button>
         </div>
-      ) : suggestions.length === 0 ? (
+      )}
+
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mb-4"></div>
+          <p className="text-slate-500 dark:text-gray-400">
+            {useAI ? 'AI analiz yapıyor...' : 'Analiz ediliyor...'}
+          </p>
+        </div>
+      ) : useAI && aiAnalysis ? (
+        <div className="bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg p-6 border border-purple-200 dark:border-purple-700">
+          <div className="prose prose-sm dark:prose-invert max-w-none">
+            <div className="whitespace-pre-wrap text-slate-700 dark:text-gray-300 leading-relaxed">
+              {aiAnalysis}
+            </div>
+          </div>
+        </div>
+      ) : !useAI && suggestions.length === 0 ? (
         <div className="text-center py-12">
           <Brain className="mx-auto text-slate-300 dark:text-gray-600 mb-4" size={48} />
           <p className="text-slate-500 dark:text-gray-400">
             Harika! Portföyünüz dengeli görünüyor.
           </p>
         </div>
-      ) : (
+      ) : !useAI ? (
         <div className="space-y-3 max-h-96 overflow-y-auto">
           {suggestions.map((suggestion, idx) => (
             <div
@@ -272,7 +407,7 @@ export function AIPortfolioSuggestions({ holdings, totalValue }: AIPortfolioSugg
             </div>
           ))}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
