@@ -79,7 +79,7 @@ export const HoldingRow = memo(function HoldingRow({ holding, onEdit, onDelete, 
             <div className="flex flex-col items-end">
               <div className="flex items-center gap-1">
                 <span className="font-semibold text-gray-900">
-                  {formatCurrency(holding.current_price, 4)}
+                  {formatCurrency(holding.current_price, 4)} {getCurrencySymbol((holding as any).currency || detectCurrency(holding.symbol, holding.asset_type))}
                 </span>
                 {holding.manual_price && (
                   <Lock size={12} className="text-blue-600" />
