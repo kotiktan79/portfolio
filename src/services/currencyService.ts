@@ -128,6 +128,20 @@ export async function updateExchangeRates(): Promise<void> {
   }
 }
 
+export function convertToTRY(amount: number, currency: string): number {
+  if (currency === 'TRY') return amount;
+
+  const rates: Record<string, number> = {
+    USD: 34.5,
+    EUR: 37.2,
+    GBP: 43.5,
+    JPY: 0.23,
+    CNY: 4.8,
+  };
+
+  return amount * (rates[currency] || 1);
+}
+
 export function getCurrencySymbol(currency: string): string {
   const symbols: Record<string, string> = {
     TRY: '₺',

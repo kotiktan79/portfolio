@@ -61,7 +61,7 @@ import { checkAndUnlockAchievements } from './services/achievementService';
 import { getAllTransactions, getTotalDividends } from './services/transactionService';
 import { requestNotificationPermission, notifyAchievementUnlocked, getNotificationPermissionStatus } from './services/notificationService';
 import { registerServiceWorker, setupInstallPrompt, setupConnectionListener } from './services/pwaService';
-import { normalizeToBaseCurrency, detectCurrency, startExchangeRateUpdates } from './services/currencyService';
+import { convertToTRY, detectCurrency, startExchangeRateUpdates } from './services/currencyService';
 
 function App() {
   const [holdings, setHoldings] = useState<Holding[]>([]);
@@ -429,12 +429,12 @@ function App() {
 
 
   const totalInvestment = holdings.reduce(
-    (sum, h) => sum + normalizeToBaseCurrency(h.purchase_price * h.quantity, h.purchase_currency || 'TRY'),
+    (sum, h) => sum + convertToTRY(h.purchase_price * h.quantity, h.purchase_currency || 'TRY'),
     0
   );
 
   const totalCurrentValue = holdings.reduce(
-    (sum, h) => sum + normalizeToBaseCurrency(h.current_price * h.quantity, h.currency || 'TRY'),
+    (sum, h) => sum + convertToTRY(h.current_price * h.quantity, h.currency || 'TRY'),
     0
   );
 
