@@ -121,23 +121,26 @@ export async function fetchCryptoPrice(symbol: string): Promise<number | null> {
   }
 
   try {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://jsqsfkyyopjfloxsqrbs.supabase.co';
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzcXNma3l5b3BqZmxveHNxcmJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjExNjc2MjAsImV4cCI6MjA3Njc0MzYyMH0.9d2gqIFCqXfPT72OjwARQOYuxjYCcy3bOK8FHII2ak8';
-    const response = await fetch(
-      `${supabaseUrl}/functions/v1/price-proxy?type=crypto&symbols=${symbol}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${supabaseKey}`,
-        }
-      }
-    );
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-    if (response.ok) {
-      const result = await response.json();
-      if (result.success && result.data?.[symbol]) {
-        const usdPrice = result.data[symbol];
-        const usdTryRate = await fetchUSDTRYRate();
-        return usdPrice * usdTryRate;
+    if (supabaseUrl && supabaseKey) {
+      const response = await fetch(
+        `${supabaseUrl}/functions/v1/price-proxy?type=crypto&symbols=${symbol}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${supabaseKey}`,
+          }
+        }
+      );
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data?.[symbol]) {
+          const usdPrice = result.data[symbol];
+          const usdTryRate = await fetchUSDTRYRate();
+          return usdPrice * usdTryRate;
+        }
       }
     }
   } catch (error) {
@@ -181,21 +184,24 @@ export async function fetchUSDTRYRate(): Promise<number> {
   }
 
   try {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://jsqsfkyyopjfloxsqrbs.supabase.co';
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzcXNma3l5b3BqZmxveHNxcmJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjExNjc2MjAsImV4cCI6MjA3Njc0MzYyMH0.9d2gqIFCqXfPT72OjwARQOYuxjYCcy3bOK8FHII2ak8';
-    const response = await fetch(
-      `${supabaseUrl}/functions/v1/price-proxy?type=usd`,
-      {
-        headers: {
-          'Authorization': `Bearer ${supabaseKey}`,
-        }
-      }
-    );
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-    if (response.ok) {
-      const result = await response.json();
-      if (result.success && result.data?.rate) {
-        return result.data.rate;
+    if (supabaseUrl && supabaseKey) {
+      const response = await fetch(
+        `${supabaseUrl}/functions/v1/price-proxy?type=usd`,
+        {
+          headers: {
+            'Authorization': `Bearer ${supabaseKey}`,
+          }
+        }
+      );
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data?.rate) {
+          return result.data.rate;
+        }
       }
     }
   } catch (error) {
@@ -228,21 +234,24 @@ export async function fetchEURTRYRate(): Promise<number> {
   }
 
   try {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://jsqsfkyyopjfloxsqrbs.supabase.co';
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzcXNma3l5b3BqZmxveHNxcmJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjExNjc2MjAsImV4cCI6MjA3Njc0MzYyMH0.9d2gqIFCqXfPT72OjwARQOYuxjYCcy3bOK8FHII2ak8';
-    const response = await fetch(
-      `${supabaseUrl}/functions/v1/price-proxy?type=eur`,
-      {
-        headers: {
-          'Authorization': `Bearer ${supabaseKey}`,
-        }
-      }
-    );
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-    if (response.ok) {
-      const result = await response.json();
-      if (result.success && result.data?.rate) {
-        return result.data.rate;
+    if (supabaseUrl && supabaseKey) {
+      const response = await fetch(
+        `${supabaseUrl}/functions/v1/price-proxy?type=eur`,
+        {
+          headers: {
+            'Authorization': `Bearer ${supabaseKey}`,
+          }
+        }
+      );
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data?.rate) {
+          return result.data.rate;
+        }
       }
     }
   } catch (error) {
@@ -274,33 +283,36 @@ export async function fetchGoldPrice(): Promise<number> {
   console.log('🔍 Fetching gold price...');
 
   try {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://jsqsfkyyopjfloxsqrbs.supabase.co';
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzcXNma3l5b3BqZmxveHNxcmJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjExNjc2MjAsImV4cCI6MjA3Njc0MzYyMH0.9d2gqIFCqXfPT72OjwARQOYuxjYCcy3bOK8FHII2ak8';
-    const response = await fetch(
-      `${supabaseUrl}/functions/v1/price-proxy?type=gold`,
-      {
-        cache: 'no-cache',
-        headers: {
-          'Authorization': `Bearer ${supabaseKey}`,
-        }
-      }
-    );
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-    if (response.ok) {
-      const result = await response.json();
-      console.log('📦 Proxy response:', result);
-      if (result.success && result.data?.pricePerOz) {
-        const goldPricePerOunce = result.data.pricePerOz;
-        const gramPerOunce = 31.1035;
-        const usdTryRate = await fetchUSDTRYRate();
-        const pricePerGram = goldPricePerOunce / gramPerOunce;
-        const tryPrice = pricePerGram * usdTryRate;
-        console.log(`🥇 Gold Calculation:
+    if (supabaseUrl && supabaseKey) {
+      const response = await fetch(
+        `${supabaseUrl}/functions/v1/price-proxy?type=gold`,
+        {
+          cache: 'no-cache',
+          headers: {
+            'Authorization': `Bearer ${supabaseKey}`,
+          }
+        }
+      );
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('📦 Proxy response:', result);
+        if (result.success && result.data?.pricePerOz) {
+          const goldPricePerOunce = result.data.pricePerOz;
+          const gramPerOunce = 31.1035;
+          const usdTryRate = await fetchUSDTRYRate();
+          const pricePerGram = goldPricePerOunce / gramPerOunce;
+          const tryPrice = pricePerGram * usdTryRate;
+          console.log(`🥇 Gold Calculation:
   - Price per oz: $${goldPricePerOunce}
   - Price per gram: $${pricePerGram.toFixed(2)}
   - USD/TRY rate: ${usdTryRate}
   - Final TL price: ${tryPrice.toFixed(2)} ₺/gram`);
-        return tryPrice;
+          return tryPrice;
+        }
       }
     }
   } catch (error) {
@@ -369,25 +381,28 @@ export async function fetchEuropeanStockPrice(symbol: string): Promise<number | 
   try {
     if (!EURONEXT_STOCKS[symbol]) return null;
 
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://jsqsfkyyopjfloxsqrbs.supabase.co';
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzcXNma3l5b3BqZmxveHNxcmJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjExNjc2MjAsImV4cCI6MjA3Njc0MzYyMH0.9d2gqIFCqXfPT72OjwARQOYuxjYCcy3bOK8FHII2ak8';
-    const response = await fetch(
-      `${supabaseUrl}/functions/v1/price-proxy?type=european&symbols=${symbol}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${supabaseKey}`,
-        }
-      }
-    );
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-    if (response.ok) {
-      const result = await response.json();
-      if (result.success && result.data?.price) {
-        const priceEUR = result.data.price;
-        const eurTryRate = await fetchEURTRYRate();
-        const priceTRY = priceEUR * eurTryRate;
-        console.log(`${symbol}: €${priceEUR.toFixed(2)} -> ${priceTRY.toFixed(2)} ₺`);
-        return priceTRY;
+    if (supabaseUrl && supabaseKey) {
+      const response = await fetch(
+        `${supabaseUrl}/functions/v1/price-proxy?type=european&symbols=${symbol}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${supabaseKey}`,
+          }
+        }
+      );
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data?.price) {
+          const priceEUR = result.data.price;
+          const eurTryRate = await fetchEURTRYRate();
+          const priceTRY = priceEUR * eurTryRate;
+          console.log(`${symbol}: €${priceEUR.toFixed(2)} -> ${priceTRY.toFixed(2)} ₺`);
+          return priceTRY;
+        }
       }
     }
   } catch (error) {
@@ -424,24 +439,27 @@ export async function fetchFromFinnhub(symbol: string, tickerSymbol: string): Pr
 
 export async function fetchBISTPrice(symbol: string): Promise<number | null> {
   try {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://jsqsfkyyopjfloxsqrbs.supabase.co';
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzcXNma3l5b3BqZmxveHNxcmJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjExNjc2MjAsImV4cCI6MjA3Njc0MzYyMH0.9d2gqIFCqXfPT72OjwARQOYuxjYCcy3bOK8FHII2ak8';
-    const response = await fetch(
-      `${supabaseUrl}/functions/v1/bist-live-prices?symbols=${symbol}`,
-      {
-        cache: 'no-cache',
-        headers: {
-          'Authorization': `Bearer ${supabaseKey}`,
-        }
-      }
-    );
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-    if (response.ok) {
-      const data = await response.json();
-      if (data.success && data.data && data.data[symbol]) {
-        const price = data.data[symbol].price;
-        console.log(`${symbol} (Edge Function): ${price} ₺`);
-        return price;
+    if (supabaseUrl && supabaseKey) {
+      const response = await fetch(
+        `${supabaseUrl}/functions/v1/bist-live-prices?symbols=${symbol}`,
+        {
+          cache: 'no-cache',
+          headers: {
+            'Authorization': `Bearer ${supabaseKey}`,
+          }
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data && data.data[symbol]) {
+          const price = data.data[symbol].price;
+          console.log(`${symbol} (Edge Function): ${price} ₺`);
+          return price;
+        }
       }
     }
   } catch (error) {
@@ -840,46 +858,53 @@ export async function fetchMultiplePrices(symbols: { symbol: string; assetType: 
 
   if (bistStocks.length > 0) {
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://jsqsfkyyopjfloxsqrbs.supabase.co';
-      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzcXNma3l5b3BqZmxveHNxcmJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjExNjc2MjAsImV4cCI6MjA3Njc0MzYyMH0.9d2gqIFCqXfPT72OjwARQOYuxjYCcy3bOK8FHII2ak8';
-      const symbolList = bistStocks.map(s => s.symbol).join(',');
-      const response = await fetch(
-        `${supabaseUrl}/functions/v1/price-proxy?type=bist&symbols=${symbolList}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${supabaseKey}`,
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      if (supabaseUrl && supabaseKey) {
+        const symbolList = bistStocks.map(s => s.symbol).join(',');
+        const response = await fetch(
+          `${supabaseUrl}/functions/v1/price-proxy?type=bist&symbols=${symbolList}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${supabaseKey}`,
+            }
           }
-        }
-      );
+        );
 
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success && result.data) {
-          Object.entries(result.data).forEach(([symbol, priceData]: [string, any]) => {
-            const price = priceData.price;
-            prices[symbol] = price;
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data) {
+            Object.entries(result.data).forEach(([symbol, priceData]: [string, any]) => {
+              const price = priceData.price;
+              prices[symbol] = price;
 
-            priceCache[symbol] = {
-              price,
-              timestamp: Date.now(),
-              source: 'api',
-            };
+              priceCache[symbol] = {
+                price,
+                timestamp: Date.now(),
+                source: 'api',
+              };
 
-            notifyPriceUpdate({
-              symbol,
-              price,
-              timestamp: Date.now(),
-              source: 'Price Proxy',
+              notifyPriceUpdate({
+                symbol,
+                price,
+                timestamp: Date.now(),
+                source: 'Price Proxy',
+              });
+
+              console.log(`${symbol}: ${price} ₺ (Proxy)`);
             });
-
-            console.log(`${symbol}: ${price} ₺ (Proxy)`);
-          });
+          }
         }
       }
     } catch (error) {
       console.warn('Bulk BIST fetch failed, falling back to individual requests');
+    }
+
+    const missingSymbols = bistStocks.filter(s => !prices[s.symbol]);
+    if (missingSymbols.length > 0) {
       await Promise.all(
-        bistStocks.map(async ({ symbol, assetType }) => {
+        missingSymbols.map(async ({ symbol, assetType }) => {
           prices[symbol] = await fetchRealTimePrice(symbol, assetType);
         })
       );
